@@ -1,29 +1,31 @@
 import { useMemo } from 'react'
 import { findNearestPreset } from '@/data/presets'
+import { VESSEL_COLORS } from '@/data/colors'
 
 interface TeachingPanelProps {
   raoLao: number
   cranialCaudal: number
 }
 
+/** Short names, on the same validated artery colours as the monitor and the 3D heart. */
 const SEGMENT_DISPLAY: Record<string, { name: string; color: string }> = {
-  'lm': { name: 'LM', color: '#FFD700' },
-  'prox-lad': { name: 'pLAD', color: '#FF4444' },
-  'mid-lad': { name: 'mLAD', color: '#FF4444' },
-  'dist-lad': { name: 'dLAD', color: '#FF4444' },
-  'd1': { name: 'D1', color: '#FF8844' },
-  'd2': { name: 'D2', color: '#FFAA44' },
-  'sep1': { name: 'Sep', color: '#FF6666' },
-  'prox-lcx': { name: 'pLCx', color: '#44AAFF' },
-  'dist-lcx': { name: 'dLCx', color: '#44AAFF' },
-  'om1': { name: 'OM1', color: '#6688FF' },
-  'om2': { name: 'OM2', color: '#8888FF' },
-  'prox-rca': { name: 'pRCA', color: '#44CC44' },
-  'mid-rca': { name: 'mRCA', color: '#44CC44' },
-  'dist-rca': { name: 'dRCA', color: '#44CC44' },
-  'pda': { name: 'PDA', color: '#66DD66' },
-  'plv': { name: 'PLV', color: '#88EE88' },
-  'am': { name: 'AM', color: '#44BB44' },
+  'lm': { name: 'LM', color: VESSEL_COLORS.LM },
+  'prox-lad': { name: 'pLAD', color: VESSEL_COLORS.LAD },
+  'mid-lad': { name: 'mLAD', color: VESSEL_COLORS.LAD },
+  'dist-lad': { name: 'dLAD', color: VESSEL_COLORS.LAD },
+  'd1': { name: 'D1', color: VESSEL_COLORS.D1 },
+  'd2': { name: 'D2', color: VESSEL_COLORS.D2 },
+  'sep1': { name: 'Sep', color: VESSEL_COLORS.SEP },
+  'prox-lcx': { name: 'pLCx', color: VESSEL_COLORS.LCx },
+  'dist-lcx': { name: 'dLCx', color: VESSEL_COLORS.LCx },
+  'om1': { name: 'OM1', color: VESSEL_COLORS.OM1 },
+  'om2': { name: 'OM2', color: VESSEL_COLORS.OM2 },
+  'prox-rca': { name: 'pRCA', color: VESSEL_COLORS.RCA },
+  'mid-rca': { name: 'mRCA', color: VESSEL_COLORS.RCA },
+  'dist-rca': { name: 'dRCA', color: VESSEL_COLORS.RCA },
+  'pda': { name: 'PDA', color: VESSEL_COLORS.PDA },
+  'plv': { name: 'PLV', color: VESSEL_COLORS.PLV },
+  'am': { name: 'AM', color: VESSEL_COLORS.AM },
 }
 
 export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
