@@ -35,26 +35,26 @@ export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
   const isCustom = distance > 15
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-900/80 border-l border-gray-800/50 p-4 flex flex-col gap-4 text-sm">
+    <div className="h-full overflow-y-auto p-4 flex flex-col gap-4 text-sm">
       {/* View name */}
       <div>
-        <p className="text-[10px] text-indigo-400 uppercase tracking-wider mb-1">
+        <p className="text-xs text-drape mb-1">
           {isCustom ? 'Custom View' : 'Current Target'}
         </p>
         <h3 className="text-lg font-bold text-white">
           {isCustom ? 'Custom View' : preset.name}
         </h3>
         {!isCustom && (
-          <p className="text-xs text-gray-500 mt-0.5">{preset.angleRange}</p>
+          <p className="text-xs text-ink-faint mt-0.5">{preset.angleRange}</p>
         )}
       </div>
 
       {/* Objective */}
       <div>
-        <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+        <h4 className="text-xs font-semibold text-drape mb-1">
           Objective
         </h4>
-        <p className="text-gray-300">
+        <p className="text-ink">
           {isCustom
             ? 'Explore vessel overlap and elongation at a non-standard projection.'
             : preset.objective}
@@ -63,10 +63,10 @@ export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
 
       {/* Clinical Notes */}
       <div>
-        <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+        <h4 className="text-xs font-semibold text-drape mb-1">
           Clinical Notes
         </h4>
-        <p className="text-gray-400 leading-relaxed">
+        <p className="text-ink-soft leading-relaxed">
           {isCustom
             ? 'This view is not a standard dictionary preset. Adjust angles to explore how vessel visualization changes.'
             : preset.clinicalNotes}
@@ -75,7 +75,7 @@ export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
 
       {/* Expected Findings */}
       <div>
-        <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+        <h4 className="text-xs font-semibold text-drape mb-1">
           Expected Findings
         </h4>
         <ul className="space-y-1.5">
@@ -83,7 +83,7 @@ export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
             ? ['Adjust angles toward a standard preset for specific findings.']
             : preset.expectedFindings
           ).map((finding, i) => (
-            <li key={i} className="flex items-start gap-2 text-gray-300">
+            <li key={i} className="flex items-start gap-2 text-ink">
               <span className="text-emerald-400 mt-0.5 shrink-0">&#x2022;</span>
               <span>{finding}</span>
             </li>
@@ -94,7 +94,7 @@ export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
       {/* Target Segments */}
       {!isCustom && (
         <div>
-          <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
+          <h4 className="text-xs font-semibold text-drape mb-1">
             Best Segments
           </h4>
           <div className="flex flex-wrap gap-1.5">
@@ -120,11 +120,11 @@ export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
       )}
 
       {/* Practice Prompt */}
-      <div className="mt-auto pt-4 border-t border-gray-800/50">
-        <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-1">
-          Practice Prompt
+      <div className="mt-auto pt-4 border-t border-line">
+        <h4 className="text-sm font-bold text-drape mb-1">
+          Practice prompt
         </h4>
-        <p className="text-gray-300 italic">
+        <p className="text-ink italic">
           {isCustom
             ? 'Adjust ±5° in both axes. Observe which segments overlap and which elongate.'
             : preset.practicePrompt}

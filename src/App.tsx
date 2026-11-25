@@ -5,23 +5,21 @@ import { useArteryData } from '@/hooks/useArteryData'
 import { useHoveredSegment } from '@/hooks/useHoveredSegment'
 import { Scene3D } from '@/components/three-d/Scene3D'
 import { Scene2D } from '@/components/two-d/Scene2D'
-import { AngleSlider } from '@/components/controls/AngleSlider'
-import { AngleDisplay } from '@/components/controls/AngleDisplay'
-import { DominanceToggle } from '@/components/controls/DominanceToggle'
-import { ViewModeToggle } from '@/components/controls/ViewModeToggle'
-import { PresetButtons } from '@/components/controls/PresetButtons'
-import { QualityPanel } from '@/components/quality/QualityPanel'
-import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
 import { ChallengeShell } from '@/components/challenges/ChallengeShell'
 import { AboutDialog } from '@/components/about/AboutDialog'
+import { AppHeader } from '@/components/layout/AppHeader'
+import { CarmPad } from '@/components/layout/CarmPad'
+import { MonitorToolbar } from '@/components/layout/MonitorToolbar'
+import { ExplorePanel } from '@/components/layout/ExplorePanel'
+import { MODE_TABS, panelId } from '@/components/layout/ModeTabs'
 import { DISCLAIMER } from '@/data/credits'
-import { CineControls } from '@/components/controls/CineControls'
 import { useCineRun } from '@/hooks/useCineRun'
 import { buildVesselTree, sideOf, type InjectionSide } from '@/utils/contrast'
+import { prefersReducedMotion } from '@/utils/motion'
+import type { DominanceType, ViewMode, AppMode, CoronarySystem, PresetView } from '@/types/angles'
 
 const TeachingPanel = lazy(() => import('@/components/teaching/TeachingPanel').then(m => ({ default: m.TeachingPanel })))
 const QuizPanel = lazy(() => import('@/components/teaching/QuizPanel').then(m => ({ default: m.QuizPanel })))
-import type { DominanceType, ViewMode, AppMode, CoronarySystem, PresetView } from '@/types/angles'
 
 const IGNORE = () => {}
 
@@ -36,21 +34,26 @@ export default function App() {
   const [dominance, setDominance] = useState<DominanceType>('right')
   const [viewMode, setViewMode] = useState<ViewMode>('fluoroscopy')
   const [appMode, setAppMode] = useState<AppMode>('explore')
-  const [invertLut, setInvertLut] = useState(true)
+  const [invertLut, setInvertLut] = useState(false)
   const [showLabels, setShowLabels] = useState(false)
+  const [realFluoro, setRealFluoro] = useState(false)
+  const [heartbeat, setHeartbeat] = useState(() => !prefersReducedMotion())
   const [coronarySystem, setCoronarySystem] = useState<CoronarySystem>('both')
   const allSegments = useArteryData(dominance)
   const [highlightSegmentId, setHighlightSegmentId] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
+
   // A challenge target shows only its own side, as a selective injection would.
   const highlightSide = useMemo(() => {
     const target = allSegments.find(s => s.id === highlightSegmentId)
     return target ? sideOf(target) : null
   }, [allSegments, highlightSegmentId])
+  // The arteries filter belongs to Explore; the other tabs always show both coronaries.
+  const systemFilter = appMode === 'explore' ? coronarySystem : 'both'
   const segments = useMemo(() => {
-    const side = highlightSide ?? (coronarySystem === 'both' ? null : coronarySystem)
+    const side = highlightSide ?? (systemFilter === 'both' ? null : systemFilter)
     return side ? allSegments.filter(s => sideOf(s) === side) : allSegments
-  }, [allSegments, coronarySystem, highlightSide])
+  }, [allSegments, systemFilter, highlightSide])
   // While a target is highlighted, hover and selection are off everywhere so its name cannot leak.
   const quizLock = highlightSegmentId !== null
   const { hoveredSegmentId, setHoveredSegmentId, selectedSegmentId, setSelectedSegmentId } = useHoveredSegment()
@@ -58,232 +61,133 @@ export default function App() {
   const vesselTree = useMemo(() => buildVesselTree(allSegments), [allSegments])
   const cine = useCineRun(vesselTree, injectionSide)
 
-  const hasSidePanel = appMode !== 'explore'
+  const tabLabel = MODE_TABS.find(tab => tab.mode === appMode)?.label ?? ''
 
   return (
-    <div className="min-h-screen lg:h-screen flex flex-col bg-gray-950 text-white lg:overflow-hidden print:hidden">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2 border-b border-gray-800/50 shrink-0">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold tracking-tight">
-            <span className="text-indigo-400">CathLab</span> Trainer
-          </h1>
-          <span className="text-xs font-bold uppercase tracking-widest text-white bg-indigo-600 rounded-md px-2 py-0.5 shadow-sm">
-            Beta
-          </span>
-          <span className="text-xs text-gray-500 hidden sm:inline">
-            Coronary Angiography View Simulator
-          </span>
-        </div>
+    <div className="flex min-h-screen flex-col bg-room text-ink lg:h-screen lg:overflow-hidden print:hidden">
+      <AppHeader mode={appMode} onModeChange={setAppMode} onAbout={() => setAboutOpen(true)} />
 
-        {/* Mode toggle */}
-        <div className="flex items-center gap-3">
-          <div className="flex bg-gray-800 rounded-lg p-0.5">
-            {(['explore', 'guided', 'quiz', 'challenges'] as const).map(mode => (
-              <button
-                key={mode}
-                onClick={() => setAppMode(mode)}
-                className={`px-2.5 py-1 text-xs rounded-md transition-all capitalize ${
-                  appMode === mode
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-gray-400 hover:text-gray-200'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-          <div className="text-[10px] text-gray-600 hidden sm:block">
-            {segments.length} segments | {dominance}-dominant
-          </div>
-          <button
-            onClick={() => setAboutOpen(true)}
-            className="px-2.5 py-1 text-xs rounded-md text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-all"
-          >
-            About
-          </button>
-        </div>
-      </header>
-
-      {/* Main panels */}
-      <div className={`grid lg:flex-1 lg:min-h-0 ${
-        hasSidePanel
-          ? 'grid-cols-1 lg:grid-cols-[1fr_1fr_320px]'
-          : 'grid-cols-1 lg:grid-cols-2'
-      }`}>
-        {/* 3D Panel */}
-        <div ref={drag3D.containerRef} className="relative h-[30vh] lg:h-auto min-h-0 border-r border-gray-800/30">
-          <div className="absolute top-2 left-2 z-10 text-[10px] text-gray-600 uppercase tracking-wider bg-gray-950/80 px-2 py-0.5 rounded">
-            3D Model
-          </div>
-          <Scene3D
-            segments={segments}
-            hoveredSegmentId={quizLock ? null : hoveredSegmentId}
-            selectedSegmentId={quizLock ? null : selectedSegmentId}
-            onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}
-            onClickSegment={quizLock ? IGNORE : setSelectedSegmentId}
-            raoLao={angles.raoLao}
-            cranialCaudal={angles.cranialCaudal}
-
+      <main className="grid flex-1 grid-cols-1 gap-3 p-3 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)_340px] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)_380px]">
+        {/* Left: the C-arm pad */}
+        <aside aria-label="C-arm controls" className="rounded-xl bg-panel p-4 ring-1 ring-line lg:min-h-0 lg:overflow-y-auto">
+          <CarmPad
+            angles={angles}
+            onRaoLao={setRaoLao}
+            onCranialCaudal={setCranialCaudal}
+            onPreset={handlePreset}
+            showViewHints={appMode !== 'challenges'}
+            injectionSide={injectionSide}
+            onInjectionSide={setInjectionSide}
+            playing={cine.playing}
+            onInject={cine.play}
+            onStop={cine.stop}
+            dominance={dominance}
+            onDominance={setDominance}
           />
-        </div>
+        </aside>
 
-        {/* 2D Panel */}
-        <div ref={drag2D.containerRef} className="relative h-[30vh] lg:h-auto min-h-0 flex items-center justify-center p-2">
-          <div className="absolute top-2 left-2 z-10 text-[10px] text-gray-600 uppercase tracking-wider bg-gray-950/80 px-2 py-0.5 rounded">
-            {viewMode === 'fluoroscopy' ? 'Fluoroscopy' : 'Schematic'}
-          </div>
-          {/* Labels toggle — fluoroscopy only */}
-          {viewMode === 'fluoroscopy' && (
-            <button
-              onClick={() => setShowLabels(v => !v)}
-              className={`absolute top-2 right-2 z-10 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded transition-all ${
-                showLabels
-                  ? 'bg-cyan-700/80 text-white'
-                  : 'bg-gray-950/80 text-gray-600 hover:text-gray-400'
-              }`}
-            >
-              Labels
-            </button>
-          )}
-          <Scene2D
-            segments={segments}
-            raoLao={angles.raoLao}
-            cranialCaudal={angles.cranialCaudal}
+        {/* Centre: the live monitor, as large as the window allows */}
+        <section aria-label="Angiogram" className="order-first flex min-w-0 flex-col gap-2 lg:order-none lg:min-h-0">
+          <MonitorToolbar
             viewMode={viewMode}
-            hoveredSegmentId={hoveredSegmentId}
-            onHoverSegment={setHoveredSegmentId}
-            onClickSegment={setSelectedSegmentId}
-            realism
-            invertLut={invertLut}
-            showLabels={appMode === 'guided' || showLabels}
-            opacity={cine.opacity}
-            highlightSegmentId={highlightSegmentId}
+            onViewMode={setViewMode}
+            realFluoro={realFluoro}
+            onRealFluoro={setRealFluoro}
+            realFluoroLocked={false}
+            labels={showLabels}
+            onLabels={setShowLabels}
+            inverted={invertLut}
+            onInverted={setInvertLut}
+            heartbeat={heartbeat}
+            onHeartbeat={setHeartbeat}
           />
-        </div>
-
-        {/* Teaching / Quiz Panel (lazy-loaded) */}
-        <Suspense fallback={null}>
-          {appMode === 'guided' && (
-            <TeachingPanel
-              raoLao={angles.raoLao}
-              cranialCaudal={angles.cranialCaudal}
-            />
-          )}
-          {appMode === 'quiz' && (
-            <QuizPanel
-              raoLao={angles.raoLao}
-              cranialCaudal={angles.cranialCaudal}
-            />
-          )}
-          {appMode === 'challenges' && (
-            <ChallengeShell
-              segments={allSegments}
-              angles={angles}
-              animateTo={animateTo}
-              onHighlightChange={setHighlightSegmentId}
-            />
-          )}
-        </Suspense>
-      </div>
-
-      {/* Control Bar */}
-      <div className="shrink-0 border-t border-gray-800/50 bg-gray-900/50 px-4 py-3">
-        <div className="max-w-5xl mx-auto flex flex-col gap-3">
-          {/* Angle Display */}
-          <AngleDisplay raoLao={angles.raoLao} cranialCaudal={angles.cranialCaudal} />
-
-          {/* Sliders */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <AngleSlider
-              label="Oblique"
-              min={-90}
-              max={90}
-              value={Math.round(angles.raoLao)}
-              onChange={setRaoLao}
-              leftLabel="RAO"
-              rightLabel="LAO"
-            />
-            <AngleSlider
-              label="Angulation"
-              min={-45}
-              max={45}
-              value={Math.round(angles.cranialCaudal)}
-              onChange={setCranialCaudal}
-              leftLabel="Caudal"
-              rightLabel="Cranial"
-            />
-          </div>
-
-          {/* Presets + Toggles */}
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <PresetButtons currentAngles={angles} onSelectPreset={handlePreset} showHints={appMode !== 'challenges'} />
-            <div className="flex items-center gap-4">
-              {/* Coronary system filter */}
-              <div className="flex bg-gray-800 rounded-lg p-0.5">
-                {(['both', 'left', 'right'] as const).map(sys => (
-                  <button
-                    key={sys}
-                    onClick={() => setCoronarySystem(sys)}
-                    className={`px-2 py-1 text-[10px] rounded-md transition-all uppercase tracking-wider ${
-                      coronarySystem === sys
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-gray-400 hover:text-gray-200'
-                    }`}
-                  >
-                    {sys === 'both' ? 'All' : sys === 'left' ? 'LCA' : 'RCA'}
-                  </button>
-                ))}
-              </div>
-              <CineControls
-                side={injectionSide}
-                onSideChange={setInjectionSide}
-                playing={cine.playing}
-                onPlay={cine.play}
-                onStop={cine.stop}
-              />
-              <DominanceToggle value={dominance} onChange={setDominance} />
-              <ViewModeToggle
-                value={viewMode}
-                onChange={setViewMode}
+          <div className="flex h-[min(94vw,72vh)] items-center justify-center [container-type:size] lg:h-auto lg:min-h-0 lg:flex-1">
+            <div
+              ref={drag2D.containerRef}
+              className="relative h-[min(100cqw,100cqh)] w-[min(100cqw,100cqh)] cursor-grab overflow-hidden rounded-2xl bg-black shadow-[0_0_0_6px_#060D16,0_0_0_7px_#24405F] active:cursor-grabbing"
+            >
+              <Scene2D
+                segments={segments}
+                raoLao={angles.raoLao}
+                cranialCaudal={angles.cranialCaudal}
+                viewMode={viewMode}
+                hoveredSegmentId={hoveredSegmentId}
+                onHoverSegment={setHoveredSegmentId}
+                onClickSegment={setSelectedSegmentId}
+                realism
                 invertLut={invertLut}
-                onToggleInvert={() => setInvertLut(v => !v)}
+                showLabels={appMode === 'guided' || showLabels}
+                opacity={cine.opacity}
+                highlightSegmentId={highlightSegmentId}
               />
             </div>
           </div>
+        </section>
 
-          {/* View Quality + Optimal-View map (hidden in challenges: it would show the answers) */}
-          {appMode !== 'challenges' && (
-          <div className="border-t border-gray-800/30 pt-2 flex flex-col lg:flex-row items-center justify-center gap-4 flex-wrap">
-            <QualityPanel
-              raoLao={angles.raoLao}
-              cranialCaudal={angles.cranialCaudal}
+        {/* Right: the 3D heart as a reference monitor, then the active tab */}
+        <aside className="flex min-w-0 flex-col gap-3 lg:min-h-0">
+          <div
+            ref={drag3D.containerRef}
+            className="relative h-56 shrink-0 cursor-grab overflow-hidden rounded-xl bg-panel ring-1 ring-line active:cursor-grabbing lg:h-[34%] lg:min-h-[170px]"
+          >
+            <span className="pointer-events-none absolute left-3 top-2 z-10 text-xs text-ink-faint">3D heart. Drag to turn.</span>
+            <Scene3D
               segments={segments}
               hoveredSegmentId={quizLock ? null : hoveredSegmentId}
+              selectedSegmentId={quizLock ? null : selectedSegmentId}
               onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}
-            />
-            <OptimalViewMap
-              segments={segments}
-              segmentId={quizLock ? null : selectedSegmentId ?? hoveredSegmentId}
+              onClickSegment={quizLock ? IGNORE : setSelectedSegmentId}
               raoLao={angles.raoLao}
               cranialCaudal={angles.cranialCaudal}
-              onPick={(rl, cc) => animateTo({ raoLao: rl, cranialCaudal: cc })}
             />
           </div>
-          )}
+          <div
+            key={appMode}
+            id={panelId(appMode)}
+            role="tabpanel"
+            aria-label={tabLabel}
+            className="min-h-[24rem] flex-1 animate-panel-in overflow-hidden rounded-xl bg-panel ring-1 ring-line lg:min-h-0"
+          >
+            {appMode === 'explore' && (
+              <div className="h-full overflow-y-auto p-4">
+                <ExplorePanel
+                  raoLao={angles.raoLao}
+                  cranialCaudal={angles.cranialCaudal}
+                  segments={segments}
+                  system={coronarySystem}
+                  onSystem={setCoronarySystem}
+                  hoveredSegmentId={hoveredSegmentId}
+                  selectedSegmentId={selectedSegmentId}
+                  onHoverSegment={setHoveredSegmentId}
+                  onPick={(rl, cc) => animateTo({ raoLao: rl, cranialCaudal: cc })}
+                />
+              </div>
+            )}
+            <Suspense fallback={null}>
+              {appMode === 'guided' && <TeachingPanel raoLao={angles.raoLao} cranialCaudal={angles.cranialCaudal} />}
+              {appMode === 'quiz' && <QuizPanel raoLao={angles.raoLao} cranialCaudal={angles.cranialCaudal} />}
+            </Suspense>
+            {appMode === 'challenges' && (
+              <ChallengeShell
+                segments={allSegments}
+                angles={angles}
+                animateTo={animateTo}
+                onHighlightChange={setHighlightSegmentId}
+              />
+            )}
+          </div>
+        </aside>
+      </main>
 
-          {/* Footer: disclaimer, and the 3D heart model attribution its CC BY 4.0 licence requires */}
-          <footer className="text-center text-[9px] leading-relaxed text-gray-600">
-            <div className="text-[10px] font-medium text-gray-400">{DISCLAIMER}</div>
-            Heart model:{' '}
-            <a href="https://sketchfab.com/3d-models/realistic-human-heart-3f8072336ce94d18b3d0d055a1ece089" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-400">&ldquo;Realistic Human Heart&rdquo;</a>{' '}
-            by{' '}
-            <a href="https://sketchfab.com/neshallads" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-400">neshallads</a>,{' '}
-            licensed{' '}
-            <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-400">CC BY 4.0</a>
-          </footer>
-        </div>
-      </div>
+      {/* The disclaimer, and the attribution the heart model's CC BY 4.0 licence requires */}
+      <footer className="shrink-0 px-4 pb-2 text-center text-xs text-ink-faint">
+        <span className="text-ink-soft">{DISCLAIMER}</span> Heart model:{' '}
+        <a href="https://sketchfab.com/3d-models/realistic-human-heart-3f8072336ce94d18b3d0d055a1ece089" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-soft">&ldquo;Realistic Human Heart&rdquo;</a>{' '}
+        by{' '}
+        <a href="https://sketchfab.com/neshallads" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-soft">neshallads</a>,{' '}
+        licensed{' '}
+        <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-soft">CC BY 4.0</a>.
+      </footer>
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   )

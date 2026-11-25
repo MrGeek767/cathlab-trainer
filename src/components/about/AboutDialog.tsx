@@ -6,7 +6,7 @@ interface AboutDialogProps {
   onClose: () => void
 }
 
-const LINK = 'text-indigo-300 underline hover:text-indigo-200'
+const LINK = 'text-drape underline hover:text-ink'
 
 /** Credits, sources, simplifications and the disclaimer. */
 export function AboutDialog({ open, onClose }: AboutDialogProps) {
@@ -30,7 +30,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="about-title"
-        className="max-h-full w-full max-w-lg overflow-y-auto rounded-xl border border-gray-700 bg-gray-900 p-5 text-sm text-gray-300 shadow-xl"
+        className="max-h-full w-full max-w-lg overflow-y-auto rounded-xl border border-line bg-panel p-5 text-sm text-ink shadow-xl"
         onClick={event => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -40,15 +40,15 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           <button
             ref={closeRef}
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+            className="rounded-md px-2 py-1 text-xs text-ink-soft hover:bg-raised hover:text-ink"
           >
             Close
           </button>
         </div>
-        <p className="mt-2 font-medium text-amber-300">{DISCLAIMER}</p>
-        <p className="mt-1 text-xs text-gray-400">{NON_AFFILIATION}</p>
+        <p className="mt-2 font-medium text-ink">{DISCLAIMER}</p>
+        <p className="mt-1 text-xs text-ink-soft">{NON_AFFILIATION}</p>
 
-        <h3 className="mt-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Built on</h3>
+        <h3 className="mt-4 text-xs font-semibold text-ink-faint">Built on</h3>
         <ul className="mt-1 flex flex-col gap-1">
           {CREDITS.map(credit => (
             <li key={credit.item}>
@@ -60,7 +60,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           ))}
         </ul>
 
-        <h3 className="mt-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Sources for the answers</h3>
+        <h3 className="mt-4 text-xs font-semibold text-ink-faint">Sources for the answers</h3>
         <ul className="mt-1 flex flex-col gap-1">
           {REFERENCES.map(reference => (
             <li key={reference.url}>
@@ -71,7 +71,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           ))}
         </ul>
 
-        <h3 className="mt-4 text-xs font-semibold uppercase tracking-widest text-gray-500">What is simplified</h3>
+        <h3 className="mt-4 text-xs font-semibold text-ink-faint">What is simplified</h3>
         <ul className="mt-1 list-disc pl-5 flex flex-col gap-1">
           {SIMPLIFICATIONS.map(line => (
             <li key={line}>{line}</li>

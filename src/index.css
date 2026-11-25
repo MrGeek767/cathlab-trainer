@@ -3,9 +3,8 @@
 @tailwind utilities;
 
 html, body, #root {
-  /* min-height (not height) so the page can grow and SCROLL on mobile, where the
-     stacked panels + control bar exceed one viewport. On desktop the root sets
-     lg:h-screen explicitly, so the full-height flex layout is unaffected. */
+  /* min-height (not height) so the page can grow and scroll on narrow screens, where the
+     columns stack. On wide screens the root sets lg:h-screen, so the layout fits one view. */
   min-height: 100%;
   margin: 0;
   overflow-x: hidden;
@@ -13,11 +12,21 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
+body {
+  @apply font-sans text-base antialiased;
+}
+
+/* One clear focus style everywhere, in the selection colour. */
+:focus-visible {
+  outline: 2px solid #4C9BE8;
+  outline-offset: 2px;
+}
+
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 6px;
-  border-radius: 3px;
+  height: 8px;
+  border-radius: 4px;
   outline: none;
   cursor: pointer;
 }
@@ -25,25 +34,35 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #4C9BE8;
+  border: 3px solid #E9F0F7;
+  box-shadow: 0 0 0 4px #4C9BE833;
+  cursor: pointer;
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+input[type="range"]::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #6366f1;
-  border: 2px solid #818cf8;
+  background: #4C9BE8;
+  border: 3px solid #E9F0F7;
   cursor: pointer;
-  transition: transform 0.1s;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
+  transform: scale(1.1);
+  box-shadow: 0 0 0 6px #4C9BE84D;
 }
 
 input[type="range"]::-webkit-slider-thumb:active {
-  transform: scale(1.25);
-  background: #818cf8;
+  transform: scale(1.18);
 }
 
-/* Larger touch targets on coarse pointer devices (phones/tablets) */
+/* Larger touch targets on coarse pointer devices. */
 @media (pointer: coarse) {
   input[type="range"] {
     height: 10px;
@@ -51,5 +70,15 @@ input[type="range"]::-webkit-slider-thumb:active {
   input[type="range"]::-webkit-slider-thumb {
     width: 32px;
     height: 32px;
+  }
+}
+
+/* Anyone who asked their computer for less motion gets none of the interface animation. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

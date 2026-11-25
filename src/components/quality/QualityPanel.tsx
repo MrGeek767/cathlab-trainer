@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import type { ArterySegment } from '@/types/anatomy'
 import type { SegmentRating } from '@/types/quality'
 import { sampleSegments, gradeSampledSegments } from '@/utils/view-quality'
+import { VESSEL_COLORS } from '@/data/colors'
+import { RATING_BADGE, RATING_WORD } from '@/components/ui/rating'
 
 interface QualityPanelProps {
   raoLao: number
@@ -9,20 +11,6 @@ interface QualityPanelProps {
   segments: ArterySegment[]
   hoveredSegmentId: string | null
   onHoverSegment: (id: string | null) => void
-}
-
-const ratingColors: Record<SegmentRating, string> = {
-  '+++': 'text-emerald-400',
-  '++': 'text-yellow-400',
-  '+': 'text-orange-400',
-  '-': 'text-red-400/60',
-}
-
-const ratingBg: Record<SegmentRating, string> = {
-  '+++': 'bg-emerald-500/10',
-  '++': 'bg-yellow-500/10',
-  '+': 'bg-orange-500/10',
-  '-': 'bg-red-500/5',
 }
 
 export function QualityPanel({
@@ -55,82 +43,54 @@ export function QualityPanel({
     return map
   }, [qualities])
 
-  // Group segments by territory
-  const ladSegments = segments.filter(s => s.territory === 'LAD' || s.territory === 'LM')
-  const lcxSegments = segments.filter(s => s.territory === 'LCx')
-  const rcaSegments = segments.filter(s => s.territory === 'RCA')
+  const groups: { label: string; color: string; segments: ArterySegment[] }[] = [
+    { label: 'Left main and LAD', color: VESSEL_COLORS.LAD, segments: segments.filter(s => s.territory === 'LAD' || s.territory === 'LM') },
+    { label: 'Circumflex', color: VESSEL_COLORS.LCx, segments: segments.filter(s => s.territory === 'LCx') },
+    { label: 'Right coronary', color: VESSEL_COLORS.RCA, segments: segments.filter(s => s.territory === 'RCA') },
+  ].filter(group => group.segments.length > 0)
 
   return (
-    <div className="flex gap-4 text-[10px] justify-center flex-wrap">
-      <QualityGroup
-        label="LM / LAD"
-        segments={ladSegments}
-        qualityMap={qualityMap}
-        hoveredSegmentId={hoveredSegmentId}
-        onHoverSegment={onHoverSegment}
-      />
-      <QualityGroup
-        label="LCx"
-        segments={lcxSegments}
-        qualityMap={qualityMap}
-        hoveredSegmentId={hoveredSegmentId}
-        onHoverSegment={onHoverSegment}
-      />
-      <QualityGroup
-        label="RCA"
-        segments={rcaSegments}
-        qualityMap={qualityMap}
-        hoveredSegmentId={hoveredSegmentId}
-        onHoverSegment={onHoverSegment}
-      />
-    </div>
-  )
-}
-
-function QualityGroup({
-  label,
-  segments,
-  qualityMap,
-  hoveredSegmentId,
-  onHoverSegment,
-}: {
-  label: string
-  segments: ArterySegment[]
-  qualityMap: Map<string, { rating: SegmentRating; overlaps: string[]; foreshortenPct?: number }>
-  hoveredSegmentId: string | null
-  onHoverSegment: (id: string | null) => void
-}) {
-  return (
-    <div>
-      <div className="text-[9px] text-gray-600 uppercase tracking-wider mb-0.5">{label}</div>
-      <div className="flex flex-wrap gap-0.5">
-        {segments.map(s => {
-          const q = qualityMap.get(s.id)
-          const rating = q?.rating ?? '-'
-          const isHovered = hoveredSegmentId === s.id
-          return (
-            <div
-              key={s.id}
-              className={`px-1.5 py-0.5 rounded cursor-pointer transition-all ${ratingBg[rating]} ${
-                isHovered ? 'ring-1 ring-white/30' : ''
-              }`}
-              onMouseEnter={() => onHoverSegment(s.id)}
-              onMouseLeave={() => onHoverSegment(null)}
-              onClick={() => onHoverSegment(hoveredSegmentId === s.id ? null : s.id)}
-              title={`${s.name}: ${rating}${
-                q?.foreshortenPct != null
-                  ? ` — ${Math.round(q.foreshortenPct * 100)}% foreshortened`
-                  : ''
-              }${q?.overlaps.length ? ` (overlaps: ${q.overlaps.join(', ')})` : ''}`}
-            >
-              <span className="text-gray-400">{s.shortName}</span>
-              <span className={`ml-1 font-mono font-bold ${ratingColors[rating]}`}>
-                {rating}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+    <div className="flex flex-col gap-4">
+      {groups.map(group => (
+        <section key={group.label}>
+          <h3 className="mb-1.5 flex items-center gap-2 text-sm font-bold text-ink-soft">
+            <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: group.color }} />
+            {group.label}
+          </h3>
+          <ul className="flex flex-col gap-0.5">
+            {group.segments.map(segment => {
+              const quality = qualityMap.get(segment.id)
+              const rating = quality?.rating ?? '-'
+              const hovered = hoveredSegmentId === segment.id
+              const notes = [
+                quality?.foreshortenPct != null ? `${Math.round(quality.foreshortenPct * 100)}% foreshortened` : null,
+                quality?.overlaps.length ? `overlaps ${quality.overlaps.join(', ')}` : null,
+              ].filter(Boolean)
+              return (
+                <li key={segment.id}>
+                  <button
+                    type="button"
+                    onMouseEnter={() => onHoverSegment(segment.id)}
+                    onMouseLeave={() => onHoverSegment(null)}
+                    onFocus={() => onHoverSegment(segment.id)}
+                    onBlur={() => onHoverSegment(null)}
+                    onClick={() => onHoverSegment(hovered ? null : segment.id)}
+                    title={notes.length ? `${segment.name}: ${notes.join('; ')}` : segment.name}
+                    className={`flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-150 ${
+                      hovered ? 'bg-raised text-ink' : 'text-ink-soft hover:bg-raised/60 hover:text-ink'
+                    }`}
+                  >
+                    <span className="truncate">{segment.name}</span>
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 font-display text-sm font-semibold tabular-nums ${RATING_BADGE[rating]}`}>
+                      {rating} <span className="font-sans text-xs font-normal">{RATING_WORD[rating]}</span>
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
     </div>
   )
 }

@@ -67,7 +67,7 @@ export const ArteryTube = ({
           center
           style={{ pointerEvents: 'none' }}
         >
-          <div className="bg-gray-900/90 text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap border border-gray-700">
+          <div className="bg-room/90 text-ink text-xs px-2 py-0.5 rounded whitespace-nowrap border border-line">
             {segment.name}
           </div>
         </Html>

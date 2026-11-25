@@ -59,7 +59,7 @@ export function Scene3D({
       <AngleDrivenCamera raoLao={raoLao} cranialCaudal={cranialCaudal} />
       <Suspense fallback={
         <Html center>
-          <div className="text-gray-500 text-xs animate-pulse">Loading model...</div>
+          <div className="text-ink-faint text-sm animate-pulse">Loading the heart model…</div>
         </Html>
       }>
         <HeartGLTF

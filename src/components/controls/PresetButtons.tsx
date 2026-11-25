@@ -16,58 +16,30 @@ function isActivePreset(preset: PresetView, current: AngleState, threshold = 8):
 }
 
 export function PresetButtons({ currentAngles, onSelectPreset, showHints = true }: PresetButtonsProps) {
-  const leftPresets = VIEW_PRESETS.filter(p => p.targetSystem === 'left')
-  const rightPresets = VIEW_PRESETS.filter(p => p.targetSystem === 'right')
-  const otherPresets = VIEW_PRESETS.filter(p => p.targetSystem === 'both')
+  const groups = [
+    { label: 'Left coronary', presets: VIEW_PRESETS.filter(p => p.targetSystem === 'left') },
+    { label: 'Right coronary', presets: VIEW_PRESETS.filter(p => p.targetSystem === 'right') },
+    { label: 'Baseline', presets: VIEW_PRESETS.filter(p => p.targetSystem === 'both') },
+  ].filter(group => group.presets.length > 0)
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Left System */}
-      <div>
-        <div className="text-[9px] text-gray-600 uppercase tracking-wider mb-1">Left System</div>
-        <div className="flex flex-wrap gap-1">
-          {leftPresets.map(p => (
-            <PresetButton
-              key={p.id}
-              preset={p}
-              showHint={showHints}
-              isActive={isActivePreset(p, currentAngles)}
-              onClick={() => onSelectPreset(p)}
-            />
-          ))}
+      {groups.map(group => (
+        <div key={group.label} className={group.presets.length === 1 ? 'flex items-center justify-between gap-2' : ''}>
+          <div className={group.presets.length === 1 ? 'text-xs text-ink-faint' : 'mb-1 text-xs text-ink-faint'}>{group.label}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {group.presets.map(p => (
+              <PresetButton
+                key={p.id}
+                preset={p}
+                showHint={showHints}
+                isActive={isActivePreset(p, currentAngles)}
+                onClick={() => onSelectPreset(p)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-
-      {/* Right System */}
-      <div>
-        <div className="text-[9px] text-gray-600 uppercase tracking-wider mb-1">Right System</div>
-        <div className="flex flex-wrap gap-1">
-          {rightPresets.map(p => (
-            <PresetButton
-              key={p.id}
-              preset={p}
-              showHint={showHints}
-              isActive={isActivePreset(p, currentAngles)}
-              onClick={() => onSelectPreset(p)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Other */}
-      {otherPresets.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {otherPresets.map(p => (
-            <PresetButton
-              key={p.id}
-              preset={p}
-              showHint={showHints}
-              isActive={isActivePreset(p, currentAngles)}
-              onClick={() => onSelectPreset(p)}
-            />
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   )
 }
@@ -85,12 +57,14 @@ function PresetButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       title={showHint ? `${preset.description}\n${preset.angleRange}` : undefined}
-      className={`px-2 py-1 text-[10px] rounded transition-all border ${
+      aria-pressed={isActive}
+      className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors duration-150 active:scale-[0.97] ${
         isActive
-          ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'
-          : 'bg-gray-800/50 border-gray-700/50 text-gray-400 hover:text-gray-200 hover:bg-gray-800 hover:border-gray-600'
+          ? 'bg-drape-deep text-white ring-1 ring-drape'
+          : 'bg-raised text-ink-soft ring-1 ring-line hover:bg-line hover:text-ink'
       }`}
     >
       {preset.shortName}

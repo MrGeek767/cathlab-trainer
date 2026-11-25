@@ -78,7 +78,7 @@ export function Scene2D({
         maxHeight: '100%',
         maxWidth: '100%',
         position: 'relative',
-        filter: invertLut ? 'invert(1)' : undefined,
+        filter: invertLut ? undefined : 'invert(1)',
       } : undefined}
     >
       <Canvas

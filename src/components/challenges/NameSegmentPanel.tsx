@@ -22,11 +22,11 @@ interface NameSegmentPanelProps {
 type OptionState = 'idle' | 'right' | 'wrong' | 'chosen' | 'other'
 
 const OPTION_STYLE: Record<OptionState, string> = {
-  idle: 'bg-gray-800 text-gray-200 hover:bg-gray-700',
+  idle: 'bg-raised text-ink hover:bg-line',
   right: 'bg-emerald-600/20 text-emerald-300 ring-1 ring-emerald-500/50',
   wrong: 'bg-red-600/20 text-red-300 ring-1 ring-red-500/50',
-  chosen: 'bg-indigo-600/30 text-indigo-200 ring-1 ring-indigo-500/50',
-  other: 'bg-gray-800/50 text-gray-500',
+  chosen: 'bg-drape-soft text-ink ring-1 ring-drape/60',
+  other: 'bg-raised/60 text-ink-faint',
 }
 
 /** One "Name the segment" question: the target is highlighted; pick its name. */
@@ -85,13 +85,12 @@ export function NameSegmentPanel({
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-900/80 border-l border-gray-800/50 p-4 flex flex-col gap-4">
+    <div className="h-full overflow-y-auto p-4 flex flex-col gap-4">
       <div>
-        <div className="text-[10px] uppercase tracking-widest text-gray-500">Name the segment</div>
         <p className="mt-1 text-base font-semibold text-white">Which segment is highlighted?</p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-ink-soft">
           {question.side === 'left' ? 'Left' : 'Right'} coronary injection
-          {preset && <>, <span className="font-mono text-gray-300">{formatView(preset.raoLao, preset.cranialCaudal)}</span></>}
+          {preset && <>, <span className="font-display tabular-nums text-ink">{formatView(preset.raoLao, preset.cranialCaudal)}</span></>}
         </p>
       </div>
 
@@ -109,12 +108,12 @@ export function NameSegmentPanel({
       </div>
 
       {choice !== null && revealFeedback && (
-        <p ref={feedbackRef} className="text-sm text-gray-200">
+        <p ref={feedbackRef} className="text-sm text-ink">
           {choice === question.answer ? 'Correct.' : `Not quite. It is the ${labelOf(question.answer)}.`}
         </p>
       )}
       {choice !== null && !revealFeedback && (
-        <p ref={feedbackRef} className="text-xs text-gray-400">Answer recorded.</p>
+        <p ref={feedbackRef} className="text-xs text-ink-soft">Answer recorded.</p>
       )}
     </div>
   )

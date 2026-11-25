@@ -18,6 +18,7 @@ import { VIEW_PRESETS } from '@/data/presets'
 import { DISCLAIMER } from '@/data/credits'
 import { loadJSON, saveJSON } from '@/utils/safe-storage'
 import { formatView } from '@/utils/format-view'
+import { Segmented } from '@/components/ui/Segmented'
 import { ShowMePanel } from './ShowMePanel'
 import { NameSegmentPanel } from './NameSegmentPanel'
 
@@ -121,38 +122,44 @@ export function ChallengeShell({ segments, angles, animateTo, onHighlightChange 
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-gray-900/80 border-l border-gray-800/50">
-      <div className="shrink-0 flex flex-col gap-2 px-3 pt-3 pb-2 border-b border-gray-800/50">
-        <div className="flex gap-1">
-          {CHALLENGE_KINDS.map(kind => (
-            <button
-              key={kind}
-              onClick={() => setRun(newRun(kind, run.mode, segments))}
-              className={`px-2.5 py-1 text-xs rounded-md transition-all ${
-                run.kind === kind ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              {KIND_LABEL[kind]}
-            </button>
-          ))}
+    <div className="h-full min-h-0 flex flex-col">
+      <div className="shrink-0 flex flex-col gap-2.5 px-4 pt-4 pb-3 border-b border-line">
+        <Segmented
+          label="Challenge"
+          options={CHALLENGE_KINDS.map(kind => ({ value: kind, label: KIND_LABEL[kind] }))}
+          value={run.kind}
+          onChange={kind => setRun(newRun(kind, run.mode, segments))}
+        />
+        <div className="flex items-center justify-between gap-3">
+          <Segmented
+            label="Mode"
+            size="sm"
+            options={[
+              { value: 'learner', label: 'Learner', title: 'Feedback after every item' },
+              { value: 'exam', label: 'Exam', title: 'Real fluoro, results at the end' },
+            ]}
+            value={run.mode}
+            onChange={mode => setRun(newRun(run.kind, mode, segments))}
+          />
+          <span className="text-xs text-ink-faint">Best exam score {best[run.kind]}%</span>
         </div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex bg-gray-800 rounded-lg p-0.5">
-            {(['learner', 'exam'] as const).map(mode => (
-              <button
-                key={mode}
-                onClick={() => setRun(newRun(run.kind, mode, segments))}
-                className={`px-2 py-0.5 text-[11px] rounded-md capitalize transition-all ${
-                  run.mode === mode ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-gray-200'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
+        <div className="flex items-center gap-3">
+          <div
+            className="h-1.5 flex-1 overflow-hidden rounded-full bg-room ring-1 ring-line"
+            role="progressbar"
+            aria-label="Progress"
+            aria-valuemin={0}
+            aria-valuemax={run.items.length}
+            aria-valuenow={run.answers.length}
+          >
+            <div
+              className="h-full rounded-full bg-drape transition-[width] duration-300 ease-out"
+              style={{ width: `${(run.answers.length / Math.max(1, run.items.length)) * 100}%` }}
+            />
           </div>
-          <div className="text-[11px] text-gray-500">
-            {finished ? 'Done' : `Item ${run.index + 1} of ${run.items.length}`} · Best exam {best[run.kind]}%
-          </div>
+          <span className="shrink-0 font-display text-sm font-semibold tabular-nums text-ink-soft">
+            {finished ? 'Done' : `${run.index + 1} / ${run.items.length}`}
+          </span>
         </div>
       </div>
 
@@ -190,10 +197,10 @@ export function ChallengeShell({ segments, angles, animateTo, onHighlightChange 
       </div>
 
       {!finished && answered && (
-        <div className="shrink-0 p-3 border-t border-gray-800/50">
+        <div className="shrink-0 p-3 border-t border-line">
           <button
             onClick={next}
-            className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
+            className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-drape-deep text-white hover:bg-drape transition-colors"
           >
             {run.index + 1 >= run.items.length ? 'See results' : 'Next'}
           </button>
@@ -205,18 +212,18 @@ export function ChallengeShell({ segments, angles, animateTo, onHighlightChange 
 
 function Results({ run, best, onNewRun }: { run: Run; best: Record<ChallengeKind, number>; onNewRun: () => void }) {
   return (
-    <div className="h-full overflow-y-auto p-4 flex flex-col gap-4 text-gray-200">
+    <div className="h-full overflow-y-auto p-4 flex flex-col gap-4 text-ink">
       <ResultsBody run={run} best={best} />
       <div className="flex gap-2">
         <button
           onClick={() => window.print()}
-          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-800 text-gray-200 hover:bg-gray-700 transition-colors"
+          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-raised text-ink hover:bg-line transition-colors"
         >
           Print results
         </button>
         <button
           onClick={onNewRun}
-          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
+          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-drape-deep text-white hover:bg-drape transition-colors"
         >
           New run
         </button>
@@ -239,7 +246,7 @@ function ResultsBody({ run, best }: { run: Run; best: Record<ChallengeKind, numb
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <div className="text-[10px] uppercase tracking-widest opacity-60">
+        <div className="text-xs opacity-60">
           {run.mode === 'exam' ? 'Exam results' : 'Practice results'} · {KIND_LABEL[run.kind]}
         </div>
         <div className="mt-1 text-3xl font-bold">

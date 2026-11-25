@@ -1,4 +1,5 @@
 import type { InjectionSide } from '@/utils/contrast'
+import { Segmented } from '@/components/ui/Segmented'
 
 interface CineControlsProps {
   side: InjectionSide
@@ -8,38 +9,26 @@ interface CineControlsProps {
   onStop: () => void
 }
 
-const sides: { value: InjectionSide; label: string }[] = [
-  { value: 'left', label: 'Left inj.' },
-  { value: 'right', label: 'Right inj.' },
+const SIDES: { value: InjectionSide; label: string }[] = [
+  { value: 'left', label: 'Left coronary' },
+  { value: 'right', label: 'Right coronary' },
 ]
 
+/** Pick the coronary to inject, then run contrast. Amber means the X-ray is on. */
 export function CineControls({ side, onSideChange, playing, onPlay, onStop }: CineControlsProps) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[10px] text-gray-500 uppercase tracking-wider">Cine</span>
-      <div className="flex items-center gap-2">
-        <div className="flex bg-gray-800 rounded-lg p-0.5">
-          {sides.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => onSideChange(opt.value)}
-              className={`px-3 py-1 text-xs rounded-md transition-all ${
-                side === opt.value ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={playing ? onStop : onPlay}
-          className={`px-3 py-1 text-xs rounded-md transition-all ${
-            playing ? 'bg-rose-700 text-white' : 'bg-emerald-700 text-white hover:bg-emerald-600'
-          }`}
-        >
-          {playing ? 'Stop' : 'Run cine'}
-        </button>
-      </div>
+    <div className="flex flex-col gap-2">
+      <Segmented label="Injection side" size="sm" options={SIDES} value={side} onChange={onSideChange} />
+      <button
+        type="button"
+        onClick={playing ? onStop : onPlay}
+        className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition-[filter,background-color,transform] duration-150 active:scale-[0.98] ${
+          playing ? 'bg-raised text-xray ring-1 ring-xray/60' : 'bg-xray text-room hover:brightness-110'
+        }`}
+      >
+        <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${playing ? 'animate-lamp bg-xray shadow-[0_0_8px_#FFB21A]' : 'bg-room/70'}`} />
+        {playing ? 'Stop run' : 'Inject contrast'}
+      </button>
     </div>
   )
 }

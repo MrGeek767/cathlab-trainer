@@ -37,11 +37,11 @@ export function QuizPanel({ raoLao, cranialCaudal }: QuizPanelProps) {
 
   if (state.completed) {
     return (
-      <div className="h-full overflow-y-auto bg-gray-900/80 border-l border-gray-800/50 p-4 flex flex-col items-center justify-center gap-4 text-center">
+      <div className="h-full overflow-y-auto p-4 flex flex-col items-center justify-center gap-4 text-center">
         <div className="text-4xl font-bold text-white">
           {state.score} / {totalQuestions}
         </div>
-        <p className="text-gray-400">
+        <p className="text-ink-soft">
           {state.score === totalQuestions
             ? 'Perfect score! You know your angiographic views.'
             : state.score >= totalQuestions * 0.7
@@ -50,7 +50,7 @@ export function QuizPanel({ raoLao, cranialCaudal }: QuizPanelProps) {
         </p>
         <button
           onClick={handleReset}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 transition-colors"
+          className="px-4 py-2 bg-drape-deep text-white rounded-lg text-sm font-medium hover:bg-drape transition-colors"
         >
           Restart Quiz
         </button>
@@ -61,30 +61,24 @@ export function QuizPanel({ raoLao, cranialCaudal }: QuizPanelProps) {
   if (!currentQuestion) return null
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-900/80 border-l border-gray-800/50 p-4 flex flex-col gap-4 text-sm">
+    <div className="h-full overflow-y-auto p-4 flex flex-col gap-4 text-sm">
       {/* Score bar */}
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="flex items-center justify-between text-xs text-ink-faint">
         <span>Question {state.currentIndex + 1} / {totalQuestions}</span>
         <span className="text-emerald-400">Score: {state.score}</span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+      <div className="h-1 bg-raised rounded-full overflow-hidden">
         <div
-          className="h-full bg-indigo-500 transition-all duration-300"
+          className="h-full bg-drape transition-all duration-300"
           style={{ width: `${((state.currentIndex + (state.answered ? 1 : 0)) / totalQuestions) * 100}%` }}
         />
       </div>
 
       {/* Question type badge */}
-      <span className={`self-start px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
-        currentQuestion.type === 'identify-view'
-          ? 'bg-blue-500/20 text-blue-400'
-          : currentQuestion.type === 'identify-vessel'
-            ? 'bg-purple-500/20 text-purple-400'
-            : 'bg-amber-500/20 text-amber-400'
-      }`}>
-        {currentQuestion.type === 'angle-target' ? 'Dial It' : currentQuestion.type.replace('-', ' ')}
+      <span className="self-start rounded px-2 py-0.5 text-xs font-medium text-ink-soft ring-1 ring-line bg-raised">
+        {currentQuestion.type === 'identify-view' ? 'Name the view' : currentQuestion.type === 'identify-vessel' ? 'Name the vessel' : 'Dial it'}
       </span>
 
       {/* Question prompt */}
@@ -123,7 +117,7 @@ export function QuizPanel({ raoLao, cranialCaudal }: QuizPanelProps) {
           }`}>
             {state.lastCorrect ? 'Correct!' : 'Incorrect'}
           </p>
-          <p className="text-gray-400 text-xs leading-relaxed">
+          <p className="text-ink-soft text-xs leading-relaxed">
             {currentQuestion.explanation}
           </p>
         </div>
@@ -134,13 +128,13 @@ export function QuizPanel({ raoLao, cranialCaudal }: QuizPanelProps) {
         <div className="flex gap-2 mt-auto pt-2">
           <button
             onClick={handleNext}
-            className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 transition-colors"
+            className="flex-1 px-3 py-2 bg-drape-deep text-white rounded-lg text-sm font-medium hover:bg-drape transition-colors"
           >
             Next Question
           </button>
           <button
             onClick={handleReset}
-            className="px-3 py-2 bg-gray-800 text-gray-300 rounded-lg text-sm hover:bg-gray-700 transition-colors"
+            className="px-3 py-2 bg-raised text-ink rounded-lg text-sm hover:bg-line transition-colors"
           >
             Reset
           </button>
@@ -168,13 +162,13 @@ function ChoiceSection({
       {question.options?.map(option => {
         const isSelected = selectedOption === option
         const isCorrect = option === question.answer
-        let style = 'border-gray-700 text-gray-300 hover:border-gray-500'
+        let style = 'border-line text-ink hover:border-ink-faint'
         if (answered) {
           if (isCorrect) style = 'border-emerald-500 text-emerald-400 bg-emerald-500/10'
           else if (isSelected && !isCorrect) style = 'border-red-500 text-red-400 bg-red-500/10'
-          else style = 'border-gray-800 text-gray-600'
+          else style = 'border-line text-ink-faint'
         } else if (isSelected) {
-          style = 'border-indigo-500 text-white bg-indigo-500/10'
+          style = 'border-drape text-white bg-drape/10'
         }
 
         return (
@@ -193,7 +187,7 @@ function ChoiceSection({
         <button
           onClick={onSubmit}
           disabled={!selectedOption}
-          className="mt-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="mt-2 px-3 py-2 bg-drape-deep text-white rounded-lg text-sm font-medium hover:bg-drape transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Submit Answer
         </button>
@@ -227,8 +221,8 @@ function AngleTargetSection({
     const ok = diff <= tol
     return (
       <div className="flex items-center justify-between">
-        <span className="text-gray-400">{label}</span>
-        <span className={ok ? 'text-emerald-400 font-medium' : 'text-amber-400'}>
+        <span className="text-ink-soft">{label}</span>
+        <span className={ok ? 'text-ecg font-medium' : 'text-alarm'}>
           {Math.round(current)}° {ok ? '(in range)' : `(need ${Math.round(target)}° ±${tol}°)`}
         </span>
       </div>
@@ -237,7 +231,7 @@ function AngleTargetSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="p-3 bg-gray-800/50 rounded-lg space-y-2 text-xs">
+      <div className="p-3 bg-raised/60 rounded-lg space-y-2 text-xs">
         {formatAngle('Oblique (RAO/LAO)', raoLao, targetRL, tolerance)}
         {formatAngle('Angulation (Cran/Caud)', cranialCaudal, targetCC, tolerance)}
       </div>
@@ -251,7 +245,7 @@ function AngleTargetSection({
       {!answered && (
         <button
           onClick={onCheck}
-          className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 transition-colors"
+          className="px-3 py-2 bg-drape-deep text-white rounded-lg text-sm font-medium hover:bg-drape transition-colors"
         >
           Check Angles
         </button>

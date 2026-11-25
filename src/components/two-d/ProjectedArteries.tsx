@@ -94,10 +94,10 @@ function ProjectedArtery({
           style={{ pointerEvents: 'none' }}
         >
           <div
-            className={`text-[9px] px-1.5 py-0.5 rounded whitespace-nowrap font-medium ${
+            className={`text-xs px-1.5 py-0.5 rounded whitespace-nowrap font-medium ${
               isFluoro
-                ? 'bg-black/80 text-white border border-gray-700'
-                : 'text-gray-800 bg-white/90 border border-gray-300 shadow-sm'
+                ? 'bg-black/80 text-white border border-line'
+                : 'text-ink bg-room/85 border border-line shadow-sm'
             }`}
           >
             {segment.shortName}
