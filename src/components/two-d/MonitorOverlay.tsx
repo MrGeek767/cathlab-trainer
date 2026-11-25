@@ -1,17 +1,10 @@
+import { formatOblique, formatTilt } from '@/utils/format-view'
+
 interface MonitorOverlayProps {
   raoLao: number
   cranialCaudal: number
 }
 
-function formatOblique(v: number): string {
-  if (Math.abs(v) < 1) return 'AP'
-  return v < 0 ? `RAO ${Math.abs(Math.round(v))}` : `LAO ${Math.round(v)}`
-}
-
-function formatTilt(v: number): string {
-  if (Math.abs(v) < 1) return 'Straight'
-  return v < 0 ? `CAUD ${Math.abs(Math.round(v))}` : `CRAN ${Math.round(v)}`
-}
 
 export function MonitorOverlay({ raoLao, cranialCaudal }: MonitorOverlayProps) {
   return (

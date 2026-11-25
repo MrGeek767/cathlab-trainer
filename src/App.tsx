@@ -12,6 +12,8 @@ import { ViewModeToggle } from '@/components/controls/ViewModeToggle'
 import { PresetButtons } from '@/components/controls/PresetButtons'
 import { QualityPanel } from '@/components/quality/QualityPanel'
 import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
+import { ShowMePanel } from '@/components/challenges/ShowMePanel'
+import { SHOW_ME_ITEMS } from '@/challenges/show-me'
 import { CineControls } from '@/components/controls/CineControls'
 import { useCineRun } from '@/hooks/useCineRun'
 import { buildVesselTree, type InjectionSide } from '@/utils/contrast'
@@ -19,6 +21,9 @@ import { buildVesselTree, type InjectionSide } from '@/utils/contrast'
 const TeachingPanel = lazy(() => import('@/components/teaching/TeachingPanel').then(m => ({ default: m.TeachingPanel })))
 const QuizPanel = lazy(() => import('@/components/teaching/QuizPanel').then(m => ({ default: m.QuizPanel })))
 import type { DominanceType, ViewMode, AppMode, CoronarySystem, PresetView } from '@/types/angles'
+
+// Until the challenge shell lands (Task 9), the challenges mode shows the first item.
+const SHOW_ME_PREVIEW = SHOW_ME_ITEMS[0]
 
 export default function App() {
   const { angles, setRaoLao, setCranialCaudal, adjustRaoLao, adjustCranialCaudal, animateTo } = useAngleState()
@@ -70,7 +75,7 @@ export default function App() {
         {/* Mode toggle */}
         <div className="flex items-center gap-3">
           <div className="flex bg-gray-800 rounded-lg p-0.5">
-            {(['explore', 'guided', 'quiz'] as const).map(mode => (
+            {(['explore', 'guided', 'quiz', 'challenges'] as const).map(mode => (
               <button
                 key={mode}
                 onClick={() => setAppMode(mode)}
@@ -158,6 +163,17 @@ export default function App() {
             <QuizPanel
               raoLao={angles.raoLao}
               cranialCaudal={angles.cranialCaudal}
+            />
+          )}
+          {appMode === 'challenges' && SHOW_ME_PREVIEW && (
+            <ShowMePanel
+              item={SHOW_ME_PREVIEW}
+              segments={allSegments}
+              raoLao={angles.raoLao}
+              cranialCaudal={angles.cranialCaudal}
+              revealFeedback
+              onSubmit={() => {}}
+              onGoToBest={(raoLao, cranialCaudal) => animateTo({ raoLao, cranialCaudal })}
             />
           )}
         </Suspense>
