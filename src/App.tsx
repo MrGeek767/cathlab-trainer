@@ -119,7 +119,7 @@ export default function App() {
           <Scene3D
             segments={segments}
             hoveredSegmentId={quizLock ? null : hoveredSegmentId}
-            selectedSegmentId={quizLock ? highlightSegmentId : selectedSegmentId}
+            selectedSegmentId={quizLock ? null : selectedSegmentId}
             onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}
             onClickSegment={quizLock ? IGNORE : setSelectedSegmentId}
             raoLao={angles.raoLao}
@@ -217,7 +217,7 @@ export default function App() {
 
           {/* Presets + Toggles */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <PresetButtons currentAngles={angles} onSelectPreset={handlePreset} />
+            <PresetButtons currentAngles={angles} onSelectPreset={handlePreset} showHints={appMode !== 'challenges'} />
             <div className="flex items-center gap-4">
               {/* Coronary system filter */}
               <div className="flex bg-gray-800 rounded-lg p-0.5">

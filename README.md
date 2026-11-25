@@ -5,6 +5,7 @@ A free browser game that teaches cath lab nurses and technologists angiographic 
 **Live:** <https://mrgeek767.github.io/cathlab-trainer/>
 
 > Educational simulation, not for clinical use.
+> CathLab Trainer is an independent project and is not affiliated with AngioView.
 
 ## What's in it
 

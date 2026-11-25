@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scoreShowMe, SHOW_ME_ITEMS } from './show-me'
+import { scoreShowMe, showMeVerdict, SHOW_ME_ITEMS } from './show-me'
 
 describe('scoreShowMe', () => {
   it('AP cranial is ideal for the mid LAD', () => {
@@ -36,6 +36,20 @@ describe('scoreShowMe', () => {
         expect(Number.isFinite(result.score)).toBe(true)
         expect(Number.isFinite(result.best.score)).toBe(true)
       }
+    }
+  })
+
+  it('the left main item asks only for what is scored', () => {
+    // Only the LM rating is scored. Cranial views rate the LM ideal but the proximal LCx
+    // "not recommended", so a prompt about the bifurcation would be graded wrongly.
+    expect(SHOW_ME_ITEMS.find(item => item.segmentId === 'lm')?.prompt).toBe('Show the left main.')
+  })
+
+  it('at the best view, feedback never says a better view exists', () => {
+    for (const item of SHOW_ME_ITEMS) {
+      const { best } = scoreShowMe(item.segmentId, 0, 0)
+      const verdict = showMeVerdict(scoreShowMe(item.segmentId, best.raoLao, best.cranialCaudal))
+      expect(verdict, item.id).not.toMatch(/better view/)
     }
   })
 

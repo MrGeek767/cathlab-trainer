@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ArterySegment } from '@/types/anatomy'
 import type { SegmentRating } from '@/types/quality'
-import { scoreShowMe, type ShowMeItem, type ShowMeResult } from '@/challenges/show-me'
+import { scoreShowMe, showMeVerdict, type ShowMeItem, type ShowMeResult } from '@/challenges/show-me'
 import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
 import { formatView } from '@/utils/format-view'
 
@@ -28,12 +28,6 @@ const RATING_STYLE: Record<SegmentRating, string> = {
   '++': 'text-yellow-400 bg-yellow-500/10',
   '+': 'text-orange-400 bg-orange-500/10',
   '-': 'text-red-400 bg-red-500/10',
-}
-
-function verdict(result: ShowMeResult): string {
-  if (result.ideal) return 'Ideal view. This is a textbook projection for this segment.'
-  if (result.passed) return 'Passed. The segment can be judged here, but a better view exists.'
-  return 'Not passed. The segment is foreshortened or hidden by overlap here.'
 }
 
 /** One "Show me" item: set the C-arm, take one shot, and (in learner mode) see how it rates. */
@@ -90,7 +84,7 @@ export function ShowMePanel({
             <span className={`shrink-0 rounded-md px-2 py-1 font-mono text-sm font-bold ${RATING_STYLE[current.result.rating]}`}>
               {current.result.rating}
             </span>
-            <p className="text-sm text-gray-200">{verdict(current.result)}</p>
+            <p className="text-sm text-gray-200">{showMeVerdict(current.result)}</p>
           </div>
           <div className="flex items-center justify-between gap-2 text-xs text-gray-400">
             <div>

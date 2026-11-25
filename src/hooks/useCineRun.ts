@@ -27,6 +27,7 @@ export function useCineRun(tree: VesselTree, side: InjectionSide, timing: CineTi
   }, [])
 
   const play = useCallback(() => {
+    setOpacity(null)
     setStartTime(performance.now())
   }, [])
 
@@ -54,5 +55,7 @@ export function useCineRun(tree: VesselTree, side: InjectionSide, timing: CineTi
     return () => cancelAnimationFrame(frame.current)
   }, [startTime, tree, side, timing])
 
-  return { playing: startTime !== null, opacity, play, stop }
+  // Only a run in progress has an opacity map. A frame that lands between a reset and
+  // React's next render can still write one, so idle always reads as null.
+  return { playing: startTime !== null, opacity: startTime === null ? null : opacity, play, stop }
 }

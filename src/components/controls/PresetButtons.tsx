@@ -4,6 +4,8 @@ import { VIEW_PRESETS } from '@/data/presets'
 interface PresetButtonsProps {
   currentAngles: AngleState
   onSelectPreset: (preset: PresetView) => void
+  /** Tooltips say what each view shows; challenges turn them off because they give answers away. */
+  showHints?: boolean
 }
 
 function isActivePreset(preset: PresetView, current: AngleState, threshold = 8): boolean {
@@ -13,7 +15,7 @@ function isActivePreset(preset: PresetView, current: AngleState, threshold = 8):
   )
 }
 
-export function PresetButtons({ currentAngles, onSelectPreset }: PresetButtonsProps) {
+export function PresetButtons({ currentAngles, onSelectPreset, showHints = true }: PresetButtonsProps) {
   const leftPresets = VIEW_PRESETS.filter(p => p.targetSystem === 'left')
   const rightPresets = VIEW_PRESETS.filter(p => p.targetSystem === 'right')
   const otherPresets = VIEW_PRESETS.filter(p => p.targetSystem === 'both')
@@ -28,6 +30,7 @@ export function PresetButtons({ currentAngles, onSelectPreset }: PresetButtonsPr
             <PresetButton
               key={p.id}
               preset={p}
+              showHint={showHints}
               isActive={isActivePreset(p, currentAngles)}
               onClick={() => onSelectPreset(p)}
             />
@@ -43,6 +46,7 @@ export function PresetButtons({ currentAngles, onSelectPreset }: PresetButtonsPr
             <PresetButton
               key={p.id}
               preset={p}
+              showHint={showHints}
               isActive={isActivePreset(p, currentAngles)}
               onClick={() => onSelectPreset(p)}
             />
@@ -57,6 +61,7 @@ export function PresetButtons({ currentAngles, onSelectPreset }: PresetButtonsPr
             <PresetButton
               key={p.id}
               preset={p}
+              showHint={showHints}
               isActive={isActivePreset(p, currentAngles)}
               onClick={() => onSelectPreset(p)}
             />
@@ -70,16 +75,18 @@ export function PresetButtons({ currentAngles, onSelectPreset }: PresetButtonsPr
 function PresetButton({
   preset,
   isActive,
+  showHint,
   onClick,
 }: {
   preset: PresetView
   isActive: boolean
+  showHint: boolean
   onClick: () => void
 }) {
   return (
     <button
       onClick={onClick}
-      title={`${preset.description}\n${preset.angleRange}`}
+      title={showHint ? `${preset.description}\n${preset.angleRange}` : undefined}
       className={`px-2 py-1 text-[10px] rounded transition-all border ${
         isActive
           ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'

@@ -39,6 +39,8 @@ export const REFERENCES: Reference[] = [
 
 export const DISCLAIMER = 'Educational simulation, not for clinical use.'
 
+export const NON_AFFILIATION = 'CathLab Trainer is an independent project and is not affiliated with AngioView.'
+
 export const SIMPLIFICATIONS: string[] = [
   'The coronary tree is a hand-built model, not a real patient.',
   'View ratings follow published textbook tables; the geometry shows foreshortening and overlap only.',

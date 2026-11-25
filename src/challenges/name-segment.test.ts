@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { ArterySegment } from '@/types/anatomy'
 import { bestPresetFor, buildNameSegmentQuestion, segmentLabel } from './name-segment'
+import { QUALITY_MATRIX, RATING_SCORE } from '@/data/quality-matrix'
 import { RIGHT_DOMINANT_SEGMENTS } from '@/data/arteries'
 import { LEFT_DOMINANT_SEGMENTS } from '@/data/arteries-left-dominant'
 import { CODOMINANT_SEGMENTS } from '@/data/arteries-codominant'
@@ -59,6 +60,32 @@ describe('name the segment', () => {
   it('labels show SYNTAX numbers where they exist', () => {
     expect(segmentLabel(find(VARIANTS.right, 'mid-lad'))).toBe('Mid LAD (segment 7)')
     expect(segmentLabel(find(VARIANTS.right, 'am'))).toBe('Acute Marginal')
+  })
+
+  it('the view varies, so it never gives the answer away', () => {
+    // Over many questions, every target that the table rates ++ or better in two or
+    // more views must be shown in more than one of them.
+    const seen = new Map<string, Set<string>>()
+    for (let seed = 1; seed <= 400; seed++) {
+      const question = buildNameSegmentQuestion(VARIANTS.right, mulberry32(seed))
+      const views = seen.get(question.segmentId) ?? new Set<string>()
+      views.add(question.presetId)
+      seen.set(question.segmentId, views)
+    }
+    for (const [segmentId, views] of seen) {
+      const goodViews = QUALITY_MATRIX.filter(e => RATING_SCORE[e.ratings[segmentId] ?? '-'] >= RATING_SCORE['++'])
+      if (goodViews.length >= 2) expect(views.size, segmentId).toBeGreaterThan(1)
+    }
+  })
+
+  it('every question shows its target in a view rated ++ or better, or its best view', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const question = buildNameSegmentQuestion(VARIANTS.right, mulberry32(seed))
+      const entry = QUALITY_MATRIX.find(e => e.presetId === question.presetId)
+      const score = RATING_SCORE[entry?.ratings[question.segmentId] ?? '-']
+      const ok = score >= RATING_SCORE['++'] || question.presetId === bestPresetFor(question.segmentId)
+      expect(ok, `seed ${seed}: ${question.segmentId} in ${question.presetId}`).toBe(true)
+    }
   })
 
   it('wrong options come from the side being shown', () => {

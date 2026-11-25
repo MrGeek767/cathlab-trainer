@@ -31,21 +31,30 @@ export function bestPresetFor(segmentId: string): string {
   return bestId
 }
 
+/** Matrix views that rate the segment ++ or better; its best view when none do. */
+export function goodPresetsFor(segmentId: string): string[] {
+  const good = QUALITY_MATRIX.filter(entry => RATING_SCORE[entry.ratings[segmentId] ?? '-'] >= RATING_SCORE['++'])
+  return good.length > 0 ? good.map(entry => entry.presetId) : [bestPresetFor(segmentId)]
+}
+
 /**
- * Picks the target uniformly. Wrong options come from the same side as the target
+ * Picks the target uniformly, then one of the views that show it well, so the view
+ * does not give the answer away. Wrong options come from the same side as the target
  * where it has enough segments, since only that side is shown.
  */
 export function buildNameSegmentQuestion(segments: ArterySegment[], rng: () => number): NameSegmentQuestion {
   if (segments.length < 4) throw new Error('Name the segment needs at least 4 segments')
   const target = segments[Math.min(segments.length - 1, Math.floor(rng() * segments.length))] as ArterySegment
   const side = sideOf(target)
+  const views = goodPresetsFor(target.id)
+  const presetId = views[Math.min(views.length - 1, Math.floor(rng() * views.length))] as string
   const others = segments.filter(s => s.id !== target.id)
   const sameSide = shuffle(others.filter(s => sideOf(s) === side), rng)
   const otherSide = shuffle(others.filter(s => sideOf(s) !== side), rng)
   const wrong = [...sameSide, ...otherSide].slice(0, 3).map(s => s.id)
   return {
     segmentId: target.id,
-    presetId: bestPresetFor(target.id),
+    presetId,
     side,
     options: shuffle([target.id, ...wrong], rng),
     answer: target.id,

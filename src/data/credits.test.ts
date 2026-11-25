@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { CREDITS, REFERENCES, DISCLAIMER, SIMPLIFICATIONS } from './credits'
+import { CREDITS, REFERENCES, DISCLAIMER, SIMPLIFICATIONS, NON_AFFILIATION } from './credits'
 
 describe('credits', () => {
   it('every credit is complete and links over https', () => {
@@ -27,6 +27,10 @@ describe('credits', () => {
 
   it('the disclaimer text is exact', () => {
     expect(DISCLAIMER).toBe('Educational simulation, not for clinical use.')
+  })
+
+  it('the About text says the game is not affiliated with AngioView', () => {
+    expect(NON_AFFILIATION).toMatch(/not affiliated with AngioView/)
   })
 
   it('the simplifications are listed', () => {

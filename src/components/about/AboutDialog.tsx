@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { CREDITS, REFERENCES, SIMPLIFICATIONS, DISCLAIMER } from '@/data/credits'
+import { CREDITS, REFERENCES, SIMPLIFICATIONS, DISCLAIMER, NON_AFFILIATION } from '@/data/credits'
 
 interface AboutDialogProps {
   open: boolean
@@ -46,6 +46,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           </button>
         </div>
         <p className="mt-2 font-medium text-amber-300">{DISCLAIMER}</p>
+        <p className="mt-1 text-xs text-gray-400">{NON_AFFILIATION}</p>
 
         <h3 className="mt-4 text-xs font-semibold uppercase tracking-widest text-gray-500">Built on</h3>
         <ul className="mt-1 flex flex-col gap-1">

@@ -1,11 +1,11 @@
 import { useMemo, useLayoutEffect } from 'react'
-import * as THREE from 'three'
 import { Html } from '@react-three/drei'
 import type { ArterySegment } from '@/types/anatomy'
 import type { ViewMode } from '@/types/angles'
 import { buildArterySpline, buildTaperedTubeGeometry } from '@/utils/geometry'
 import { tubeDrawRange } from '@/utils/polyline'
 import type { OpaqueRange } from '@/utils/contrast'
+import { vesselStyle, type VesselTone } from './vessel-style'
 
 // buildTaperedTubeGeometry defaults: 64 rings × 8 sides
 const TUBULAR_SEGMENTS = 64
@@ -27,8 +27,6 @@ interface ProjectedArteriesProps {
   highlightSegmentId?: string | null
 }
 
-type Tone = 'strong' | 'normal' | 'dim'
-
 function ProjectedArtery({
   segment,
   viewMode,
@@ -44,7 +42,7 @@ function ProjectedArtery({
   segment: ArterySegment
   viewMode: ViewMode
   isHovered: boolean
-  tone: Tone
+  tone: VesselTone
   labelsAllowed: boolean
   showLabels?: boolean
   range: OpaqueRange | null
@@ -70,6 +68,7 @@ function ProjectedArtery({
 
   const isFluoro = viewMode === 'fluoroscopy'
   const visible = drawRange.count > 0
+  const style = vesselStyle(viewMode, tone, segment.color)
 
   return (
     <group>
@@ -79,23 +78,13 @@ function ProjectedArtery({
         onPointerLeave={onPointerLeave}
         onClick={onClick && ((e) => { e.stopPropagation(); onClick() })}
       >
-        {isFluoro ? (
-          <meshBasicMaterial
-            color={tone === 'strong' ? '#ffffff' : '#cccccc'}
-            transparent
-            opacity={tone === 'strong' ? 0.95 : tone === 'dim' ? 0.45 : 0.7}
-            depthTest={false}
-            depthWrite={false}
-          />
-        ) : (
-          <meshBasicMaterial
-            color={tone === 'strong' ? segment.color : new THREE.Color(segment.color).multiplyScalar(0.9)}
-            transparent={tone === 'dim'}
-            opacity={tone === 'dim' ? 0.3 : 1}
-            depthTest={false}
-            depthWrite={false}
-          />
-        )}
+        <meshBasicMaterial
+          color={style.color}
+          transparent={style.transparent}
+          opacity={style.opacity}
+          depthTest={false}
+          depthWrite={false}
+        />
       </mesh>
 
       {visible && labelsAllowed && ((viewMode === 'schematic') || isHovered || showLabels) && (
@@ -134,9 +123,9 @@ export function ProjectedArteries({
     <group>
       {segments.map(segment => {
         const isHovered = !highlighting && hoveredSegmentId === segment.id
-        const tone: Tone = highlighting
-          ? segment.id === highlightSegmentId ? 'strong' : 'dim'
-          : isHovered ? 'strong' : 'normal'
+        const tone: VesselTone = highlighting
+          ? segment.id === highlightSegmentId ? 'target' : 'dim'
+          : isHovered ? 'hover' : 'normal'
         return (
           <ProjectedArtery
             key={segment.id}

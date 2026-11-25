@@ -14,7 +14,7 @@ export interface ShowMeItem {
 export const SHOW_ME_ITEMS: ShowMeItem[] = [
   { id: 'show-mid-lad', segmentId: 'mid-lad', prompt: 'Show the mid LAD with its diagonals separated.' },
   { id: 'show-dist-lad', segmentId: 'dist-lad', prompt: 'Show the distal LAD.' },
-  { id: 'show-lm', segmentId: 'lm', prompt: 'Open up the left main bifurcation.' },
+  { id: 'show-lm', segmentId: 'lm', prompt: 'Show the left main.' },
   { id: 'show-prox-lcx', segmentId: 'prox-lcx', prompt: 'Show the proximal circumflex.' },
   { id: 'show-om1', segmentId: 'om1', prompt: 'Show the first obtuse marginal.' },
   { id: 'show-d1', segmentId: 'd1', prompt: 'Show the first diagonal.' },
@@ -61,4 +61,17 @@ export function scoreShowMe(segmentId: string, raoLao: number, cranialCaudal: nu
     ideal: score >= IDEAL_SCORE,
     best: bestView(segmentId),
   }
+}
+
+/** Scores this close to the best count as the best view (the best is found on a 5° grid). */
+const AT_BEST = 0.05
+
+/** Feedback after a shot, as the learner reads it. */
+export function showMeVerdict(result: ShowMeResult): string {
+  if (result.ideal) return 'Ideal view. This is a textbook projection for this segment.'
+  if (result.passed && result.score >= result.best.score - AT_BEST) {
+    return 'Passed. No standard view shows this segment better.'
+  }
+  if (result.passed) return 'Passed. The segment can be judged here, but a better view exists.'
+  return 'Not passed. The segment is foreshortened or hidden by overlap here.'
 }
