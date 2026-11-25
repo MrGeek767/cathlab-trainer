@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
+import { assetUrl } from '@/utils/asset-url'
 import type { ArterySegment } from '@/types/anatomy'
 import {
   extractHeartGeometry,
@@ -37,7 +38,7 @@ export function CoronaryArteries3D({
   onClickSegment,
 }: CoronaryArteries3DProps) {
   // Load heart GLTF (cached by drei — zero cost after first load)
-  const { scene } = useGLTF('/models/heart/scene.gltf')
+  const { scene } = useGLTF(assetUrl('models/heart/scene.gltf'), false)
 
   // Extract baked heart geometry for raycasting (matches <primitive scale={2.2}>)
   const { mesh: heartMesh, center: heartCenter } = useMemo(

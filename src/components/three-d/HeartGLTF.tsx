@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { useGLTF } from '@react-three/drei'
+import { assetUrl } from '@/utils/asset-url'
 
 export type HeartStyle = 'realistic' | 'ghost' | 'clay' | 'flat' | 'wireframe' | 'toon'
 
@@ -19,7 +20,7 @@ export function HeartGLTF({
   onHoverSegment: _onHoverSegment,
   onClickSegment: _onClickSegment,
 }: HeartGLTFProps) {
-  const { scene } = useGLTF('/models/heart/scene.gltf')
+  const { scene } = useGLTF(assetUrl('models/heart/scene.gltf'), false)
 
   const clonedScene = useMemo(() => {
     const clone = scene.clone(true)
@@ -113,4 +114,4 @@ export function HeartGLTF({
   return <primitive object={clonedScene} scale={2.2} />
 }
 
-useGLTF.preload('/models/heart/scene.gltf')
+useGLTF.preload(assetUrl('models/heart/scene.gltf'), false)

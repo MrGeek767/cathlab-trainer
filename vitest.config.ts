@@ -9,6 +9,6 @@ export default defineConfig({
   },
   test: {
     // Only the active app's tests — ignore the archived HistoricalAttempts projects.
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
   },
 })
