@@ -7,6 +7,7 @@ import type { OpaqueRange } from '@/utils/contrast'
 import { anglesToPosition } from '@/utils/carm-math'
 import { ProjectedArteries } from './ProjectedArteries'
 import { MonitorOverlay } from './MonitorOverlay'
+import { Landmarks3D, FLUORO_BACKGROUND } from './Landmarks3D'
 
 interface Scene2DProps {
   segments: ArterySegment[]
@@ -88,9 +89,10 @@ export function Scene2D({
         }}
         gl={{ antialias: true }}
       >
-        <color attach="background" args={[isFluoro ? '#0a0a0a' : '#f0f0ec']} />
+        <color attach="background" args={[isFluoro ? FLUORO_BACKGROUND : '#f0f0ec']} />
         <CameraController raoLao={raoLao} cranialCaudal={cranialCaudal} zoom={isFluoro ? 120 : 50} />
         <ambientLight intensity={1.0} />
+        {isFluoro && <Landmarks3D />}
         <ProjectedArteries
           segments={segments}
           viewMode={viewMode}
