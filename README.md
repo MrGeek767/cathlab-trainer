@@ -1,41 +1,31 @@
-# CathLabSimulator (iiviewer)
+# CathLab Trainer
 
-**Coronary angiography view simulator — a 3D heart model with a live 2D fluoroscopy projection.**
+A free browser game that teaches cath lab nurses and technologists angiographic views, equipment and PCI cases.
 
-The hardest part of learning angiography isn't the anatomy, it's the projection: figuring out how a 3D coronary tree collapses into whatever 2D view the gantry is giving you. This simulator puts both side by side. Rotate the heart, and the fluoro view follows in real time, until "LAO caudal" stops being an incantation and starts being a direction you can picture.
+**Live:** <https://mrgeek767.github.io/cathlab-trainer/>
 
-## Features
+> Educational simulation, not for clinical use.
 
-- **3D coronary anatomy** — interactive coronary tree rendered with three.js
-- **Live 2D fluoroscopy projection** — the angiographic view for the current gantry angulation
-- **Dominance variants** — right-dominant, left-dominant, and codominant coronary anatomy
-- **Standard view presets** — jump straight to the classic angiographic projections
-- **Teaching mode & quiz** — built-in questions for testing view recognition
-- **View-quality guidance** — which projections best show which segments
+## What's in it
 
-## Tech stack
+- **Angle Trainer:** move the C-arm and watch the angiogram, the 3D heart and the view ratings change together, with right-dominant, left-dominant and codominant anatomy.
+- **Contrast runs** with left or right injection.
+- **Challenges:** "Show me" (find the best view for a segment) and "Name the segment", in Learner or Exam mode.
 
-- [React 19](https://react.dev) + TypeScript
-- [three.js](https://threejs.org) via [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) and drei
-- [Vite](https://vite.dev), [Tailwind CSS](https://tailwindcss.com), [Vitest](https://vitest.dev)
+Coming next: the device engine (guide catheters, wires, balloons, stents) and three PCI cases with referenced, tiered scoring.
 
-## Getting started
+## Built on
 
-```bash
-npm install
-npm run dev
-```
+[iiviewer](https://annasrahman.com) by its author, used and modified with permission. See [CREDITS.md](CREDITS.md) and [LICENSE.md](LICENSE.md).
 
-Other scripts:
+## Development
 
 ```bash
-npm run test        # vitest
-npm run typecheck   # tsc --noEmit
-npm run build       # production build
+npm ci
+npm run dev          # local server
+npm test             # unit tests (Vitest)
+npm run typecheck    # TypeScript
+npm run build        # production build
 ```
 
-## Disclaimer
-
-For learning, not for the lab. Educational tool only — not for clinical use.
-
-More projects at [annasrahman.com](https://annasrahman.com).
+The design and the build plan are in [`docs/superpowers/`](docs/superpowers/).
