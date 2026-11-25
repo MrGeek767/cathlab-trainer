@@ -1,6 +1,7 @@
 import type { ArterySegment } from '@/types/anatomy'
 import { QUALITY_MATRIX, RATING_SCORE } from '@/data/quality-matrix'
 import { sideOf, type InjectionSide } from '@/utils/contrast'
+import { shuffle } from '@/utils/shuffle'
 
 /**
  * "Name the segment" challenge: the C-arm goes to the textbook view for one segment,
@@ -28,18 +29,6 @@ export function bestPresetFor(segmentId: string): string {
   }
   if (bestId === null) throw new Error('QUALITY_MATRIX is empty')
   return bestId
-}
-
-/** Fisher–Yates shuffle into a new array. */
-function shuffle<T>(items: readonly T[], rng: () => number): T[] {
-  const out = [...items]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    const held = out[i] as T
-    out[i] = out[j] as T
-    out[j] = held
-  }
-  return out
 }
 
 /**
