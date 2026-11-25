@@ -23,6 +23,12 @@ const QuizPanel = lazy(() => import('@/components/teaching/QuizPanel').then(m =>
 
 const IGNORE = () => {}
 
+const DOMINANCE_LABEL: Record<DominanceType, string> = {
+  right: 'Right dominant',
+  left: 'Left dominant',
+  codominant: 'Co-dominant',
+}
+
 export default function App() {
   const { angles, setRaoLao, setCranialCaudal, adjustRaoLao, adjustCranialCaudal, animateTo } = useAngleState()
   const drag3D = useDragRotation({ adjustRaoLao, adjustCranialCaudal })
@@ -108,17 +114,20 @@ export default function App() {
             >
               <Scene2D
                 segments={segments}
+                anatomy={allSegments}
                 raoLao={angles.raoLao}
                 cranialCaudal={angles.cranialCaudal}
                 viewMode={viewMode}
                 hoveredSegmentId={hoveredSegmentId}
                 onHoverSegment={setHoveredSegmentId}
                 onClickSegment={setSelectedSegmentId}
-                realism
                 invertLut={invertLut}
                 showLabels={appMode === 'guided' || showLabels}
                 opacity={cine.opacity}
                 highlightSegmentId={highlightSegmentId}
+                acquiring={cine.playing}
+                realFluoro={realFluoro}
+                dominanceLabel={DOMINANCE_LABEL[dominance]}
               />
             </div>
           </div>

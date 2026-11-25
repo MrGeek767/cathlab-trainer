@@ -1,6 +1,6 @@
 import type { ArterySegment } from '@/types/anatomy'
 import type { DominanceType } from '@/types/angles'
-import { buildArterySpline, ANATOMY_SCALE } from '@/utils/geometry'
+import { buildArterySpline, ANATOMY_SCALE, ANATOMY_UNIT_MM } from '@/utils/geometry'
 
 /**
  * Real-world vessel sizes, scale and SYNTAX numbers for the coronary model.
@@ -19,7 +19,7 @@ import { buildArterySpline, ANATOMY_SCALE } from '@/utils/geometry'
  * With it, the LAD is about 107 mm, the RCA to the crux about 140 mm and the
  * LM about 17 mm, all within typical adult ranges.
  */
-export const ANATOMY_UNIT_MM = 18
+export { ANATOMY_UNIT_MM } from '@/utils/geometry'
 
 type Diameters = readonly [start: number, end: number]
 

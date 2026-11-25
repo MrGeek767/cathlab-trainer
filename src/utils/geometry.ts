@@ -2,6 +2,10 @@ import * as THREE from 'three'
 
 /** Scale factor: anatomy data is in cm, we use scene units = cm * SCALE */
 export const ANATOMY_SCALE = 0.5
+/** Real size of one anatomy unit. */
+export const ANATOMY_UNIT_MM = 18
+/** Millimetres to scene units: one anatomy unit is 18 mm, drawn at ANATOMY_SCALE. */
+export const MM_TO_SCENE = ANATOMY_SCALE / ANATOMY_UNIT_MM
 
 // ─── Mesh-based surface projection (used by CoronaryArteries3D) ───
 
@@ -140,14 +144,14 @@ export function buildArterySpline(controlPoints: [number, number, number][]): TH
  * the geometry positions after creation.
  */
 export function buildTaperedTubeGeometry(
-  curve: THREE.CatmullRomCurve3,
+  curve: THREE.Curve<THREE.Vector3>,
   startRadius: number,
   endRadius: number,
   tubularSegments = 64,
   radialSegments = 8,
 ): THREE.TubeGeometry {
   // Use the average radius to create the initial geometry
-  const avgRadius = ((startRadius + endRadius) / 2) * ANATOMY_SCALE * 0.1 // mm to scene units
+  const avgRadius = ((startRadius + endRadius) / 2) * MM_TO_SCENE
   const geometry = new THREE.TubeGeometry(curve, tubularSegments, avgRadius, radialSegments, false)
 
   // Now apply tapering by adjusting radial vertex positions
@@ -156,7 +160,7 @@ export function buildTaperedTubeGeometry(
 
   for (let i = 0; i <= tubularSegments; i++) {
     const t = i / tubularSegments
-    const targetRadius = (startRadius + (endRadius - startRadius) * t) * ANATOMY_SCALE * 0.1
+    const targetRadius = (startRadius + (endRadius - startRadius) * t) * MM_TO_SCENE
     const scaleRatio = targetRadius / avgRadius
 
     for (let j = 0; j <= radialSegments; j++) {
@@ -165,8 +169,8 @@ export function buildTaperedTubeGeometry(
       const py = positions.getY(idx)
       const pz = positions.getZ(idx)
 
-      // Get the center point on the curve at this t
-      const center = curve.getPoint(t)
+      // The ring's centre: TubeGeometry places rings by arc length, so measure the same way.
+      const center = curve.getPointAt(t)
 
       // Scale the radial offset
       const dx = px - center.x
@@ -196,4 +200,68 @@ export function buildTaperedTubeGeometry(
   geometry.computeBoundingSphere()
 
   return geometry
+}
+
+/**
+ * Store each vertex's local vessel radius (mm) as the `aRadius` attribute, tapering
+ * along the tube like its geometry, so contrast density can follow the lumen.
+ */
+export function addRadiusAttribute(
+  geometry: THREE.BufferGeometry,
+  startRadiusMm: number,
+  endRadiusMm: number,
+  tubularSegments = 64,
+  radialSegments = 8,
+): void {
+  const count = geometry.attributes.position!.count
+  const radii = new Float32Array(count)
+  for (let i = 0; i <= tubularSegments; i++) {
+    const r = startRadiusMm + (endRadiusMm - startRadiusMm) * (i / tubularSegments)
+    for (let j = 0; j <= radialSegments; j++) {
+      const index = i * (radialSegments + 1) + j
+      if (index < count) radii[index] = r
+    }
+  }
+  geometry.setAttribute('aRadius', new THREE.BufferAttribute(radii, 1))
+}
+
+/**
+ * The curve with a straight run added before its start and after its end, along the
+ * end tangents. Neighbouring vessel segments meet at an angle, each tube ending square
+ * to its own course; a short overlap closes the seam that would otherwise show.
+ */
+export function extendCurveEnds(
+  curve: THREE.Curve<THREE.Vector3>,
+  startLength: number,
+  endLength: number,
+): THREE.Curve<THREE.Vector3> {
+  const path = new THREE.CurvePath<THREE.Vector3>()
+  const start = curve.getPointAt(0)
+  const end = curve.getPointAt(1)
+  if (startLength > 0) {
+    path.add(new THREE.LineCurve3(start.clone().addScaledVector(curve.getTangentAt(0), -startLength), start))
+  }
+  path.add(curve)
+  if (endLength > 0) {
+    path.add(new THREE.LineCurve3(end, end.clone().addScaledVector(curve.getTangentAt(1), endLength)))
+  }
+  return path
+}
+
+/**
+ * Store the vessel's direction at each ring as the `aAxis` attribute, so the shader can
+ * tell how far the vessel turns toward the beam (foreshortening).
+ */
+export function addAxisAttribute(geometry: THREE.TubeGeometry, tubularSegments = 64, radialSegments = 8): void {
+  const count = geometry.attributes.position!.count
+  const axes = new Float32Array(count * 3)
+  for (let i = 0; i <= tubularSegments; i++) {
+    const tangent = geometry.tangents[i]
+    if (!tangent) continue
+    for (let j = 0; j <= radialSegments; j++) {
+      const index = i * (radialSegments + 1) + j
+      if (index < count) tangent.toArray(axes, index * 3)
+    }
+  }
+  geometry.setAttribute('aAxis', new THREE.BufferAttribute(axes, 3))
 }

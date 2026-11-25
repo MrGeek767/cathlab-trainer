@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { ArterySegment } from '@/types/anatomy'
 import type { ViewQualityEntry } from '@/types/quality'
-import { buildArterySpline, ANATOMY_SCALE } from '@/utils/geometry'
+import { buildArterySpline, MM_TO_SCENE } from '@/utils/geometry'
 import { computeCameraBasis } from '@/utils/carm-math'
 import { interpolateSegmentScores, scoreToRating } from '@/data/quality-matrix'
 
@@ -54,9 +54,9 @@ export interface SegmentGeometry {
   overlaps: string[]
 }
 
-/** Radius of a segment in scene units (matches buildTaperedTubeGeometry: mm·SCALE·0.1). */
+/** Radius of a segment in scene units (matches buildTaperedTubeGeometry). */
 function radiusScene(seg: ArterySegment): number {
-  return ((seg.startRadius + seg.endRadius) / 2) * ANATOMY_SCALE * 0.1
+  return ((seg.startRadius + seg.endRadius) / 2) * MM_TO_SCENE
 }
 
 function dot3(a: readonly [number, number, number], x: number, y: number, z: number): number {

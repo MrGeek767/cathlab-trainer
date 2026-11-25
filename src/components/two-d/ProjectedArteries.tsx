@@ -1,14 +1,26 @@
-import { useMemo, useLayoutEffect } from 'react'
+import { useEffect, useMemo, useLayoutEffect } from 'react'
 import { Html } from '@react-three/drei'
+import type * as THREE from 'three'
 import type { ArterySegment } from '@/types/anatomy'
 import type { ViewMode } from '@/types/angles'
-import { buildArterySpline, buildTaperedTubeGeometry } from '@/utils/geometry'
+import {
+  MM_TO_SCENE,
+  addAxisAttribute,
+  addRadiusAttribute,
+  buildArterySpline,
+  buildTaperedTubeGeometry,
+  extendCurveEnds,
+} from '@/utils/geometry'
 import { tubeDrawRange } from '@/utils/polyline'
+import { buildVesselPaths } from '@/utils/vessel-paths'
 import type { OpaqueRange } from '@/utils/contrast'
 import { vesselStyle, type VesselTone } from './vessel-style'
+import { lumenMaterial, CONTRAST_ATTENUATION_PER_MM, VESSEL_BEHIND_LAYER, VESSEL_LAYER } from './density'
 
 // buildTaperedTubeGeometry defaults: 64 rings × 8 sides
 const TUBULAR_SEGMENTS = 64
+/** How far each tube runs past its ends, in drawn radii (closes seams at joints up to ~65°). */
+const JOINT_OVERLAP = 0.6
 const RADIAL_SEGMENTS = 8
 
 interface ProjectedArteriesProps {
@@ -29,6 +41,7 @@ interface ProjectedArteriesProps {
 
 function ProjectedArtery({
   segment,
+  path,
   viewMode,
   isHovered,
   tone,
@@ -40,6 +53,8 @@ function ProjectedArtery({
   onClick,
 }: {
   segment: ArterySegment
+  /** The drawn centre line (buildVesselPaths); the segment's own spline if absent. */
+  path: THREE.Curve<THREE.Vector3> | null
   viewMode: ViewMode
   isHovered: boolean
   tone: VesselTone
@@ -50,42 +65,88 @@ function ProjectedArtery({
   onPointerLeave?: () => void
   onClick?: () => void
 }) {
+  const isFluoro = viewMode === 'fluoroscopy'
+  // Fluoro draws vessels at their real width; the diagram draws them bolder for reading.
+  const widthFactor = isFluoro ? 1 : 1.5
   const { geometry, midpoint } = useMemo(() => {
-    const curve = buildArterySpline(segment.controlPoints)
+    const curve = path ?? buildArterySpline(segment.controlPoints)
+    // Each tube runs on a little past its ends so neighbouring segments overlap: no seam.
+    const overlap = (radiusMm: number) => radiusMm * widthFactor * MM_TO_SCENE * JOINT_OVERLAP
     const geo = buildTaperedTubeGeometry(
-      curve,
-      segment.startRadius * 1.2,
-      segment.endRadius * 1.2,
+      extendCurveEnds(curve, overlap(segment.startRadius), overlap(segment.endRadius)),
+      segment.startRadius * widthFactor,
+      segment.endRadius * widthFactor,
+      TUBULAR_SEGMENTS,
+      RADIAL_SEGMENTS,
     )
+    // The real lumen and course at every vertex, for the contrast density.
+    addRadiusAttribute(geo, segment.startRadius, segment.endRadius, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
+    addAxisAttribute(geo, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
     const mid = curve.getPoint(0.5)
     return { geometry: geo, midpoint: mid }
-  }, [segment])
+  }, [segment, path, widthFactor])
+  useEffect(() => () => geometry.dispose(), [geometry])
+
+  const contrast = useMemo(() => ({ front: lumenMaterial('front'), behind: lumenMaterial('behind') }), [])
+  useEffect(
+    () => () => {
+      contrast.front.dispose()
+      contrast.behind.dispose()
+    },
+    [contrast],
+  )
 
   const drawRange = tubeDrawRange(range, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
   useLayoutEffect(() => {
     geometry.setDrawRange(drawRange.start, drawRange.count)
   }, [geometry, drawRange.start, drawRange.count])
 
-  const isFluoro = viewMode === 'fluoroscopy'
   const visible = drawRange.count > 0
   const style = vesselStyle(viewMode, tone, segment.color)
+  // Contrast attenuates in proportion to the lumen the beam crosses (see lumenChordMm).
+  contrast.front.uniforms.uDensity!.value = CONTRAST_ATTENUATION_PER_MM * style.density
+  contrast.behind.uniforms.uDensity!.value = CONTRAST_ATTENUATION_PER_MM * style.density
 
   return (
     <group>
-      <mesh
-        geometry={geometry}
-        onPointerEnter={onPointerEnter && ((e) => { e.stopPropagation(); onPointerEnter() })}
-        onPointerLeave={onPointerLeave}
-        onClick={onClick && ((e) => { e.stopPropagation(); onClick() })}
-      >
-        <meshBasicMaterial
-          color={style.color}
-          transparent={style.transparent}
-          opacity={style.opacity}
-          depthTest={false}
-          depthWrite={false}
-        />
-      </mesh>
+      {isFluoro ? (
+        <>
+          <mesh
+            key="fluoro"
+            geometry={geometry}
+            material={contrast.front}
+            onUpdate={self => self.layers.enable(VESSEL_LAYER)}
+            onPointerEnter={onPointerEnter && ((e) => { e.stopPropagation(); onPointerEnter() })}
+            onPointerLeave={onPointerLeave}
+            onClick={onClick && ((e) => { e.stopPropagation(); onClick() })}
+          />
+          {/* Crossing pass only: off layer 0, so it is never drawn directly or picked. */}
+          <mesh
+            key="fluoro-behind"
+            geometry={geometry}
+            material={contrast.behind}
+            onUpdate={self => self.layers.set(VESSEL_BEHIND_LAYER)}
+          />
+        </>
+      ) : (
+        <mesh
+          key="diagram"
+          geometry={geometry}
+          onPointerEnter={onPointerEnter && ((e) => { e.stopPropagation(); onPointerEnter() })}
+          onPointerLeave={onPointerLeave}
+          onClick={onClick && ((e) => { e.stopPropagation(); onClick() })}
+        >
+          {/* Depth-tested, so the diagram shows which vessel lies in front; dimmed
+              vessels write no depth and never hide a highlighted one. */}
+          <meshBasicMaterial
+            color={style.color}
+            transparent={style.transparent}
+            opacity={style.opacity}
+            depthTest
+            depthWrite={!style.transparent}
+          />
+        </mesh>
+      )}
 
       {visible && labelsAllowed && ((viewMode === 'schematic') || isHovered || showLabels) && (
         <Html
@@ -119,6 +180,8 @@ export function ProjectedArteries({
   highlightSegmentId = null,
 }: ProjectedArteriesProps) {
   const highlighting = highlightSegmentId !== null
+  // Smooth centre lines: each artery bends through its segment joints without a kink.
+  const paths = useMemo(() => buildVesselPaths(segments), [segments])
   return (
     <group>
       {segments.map(segment => {
@@ -130,6 +193,7 @@ export function ProjectedArteries({
           <ProjectedArtery
             key={segment.id}
             segment={segment}
+            path={paths.get(segment.id) ?? null}
             viewMode={viewMode}
             isHovered={isHovered}
             tone={tone}
