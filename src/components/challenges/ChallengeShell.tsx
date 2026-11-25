@@ -15,6 +15,7 @@ import {
   type RunItem,
 } from '@/challenges/session'
 import { VIEW_PRESETS } from '@/data/presets'
+import { DISCLAIMER } from '@/data/credits'
 import { loadJSON, saveJSON } from '@/utils/safe-storage'
 import { formatView } from '@/utils/format-view'
 import { ShowMePanel } from './ShowMePanel'
@@ -225,6 +226,7 @@ function Results({ run, best, onNewRun }: { run: Run; best: Record<ChallengeKind
           <h1 className="text-xl font-bold">CathLab Trainer: challenge results</h1>
           <p className="mb-4 text-sm">{new Date().toLocaleString()}</p>
           <ResultsBody run={run} best={best} />
+          <p className="mt-6 text-xs">{DISCLAIMER}</p>
         </div>,
         document.body,
       )}

@@ -13,6 +13,8 @@ import { PresetButtons } from '@/components/controls/PresetButtons'
 import { QualityPanel } from '@/components/quality/QualityPanel'
 import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
 import { ChallengeShell } from '@/components/challenges/ChallengeShell'
+import { AboutDialog } from '@/components/about/AboutDialog'
+import { DISCLAIMER } from '@/data/credits'
 import { CineControls } from '@/components/controls/CineControls'
 import { useCineRun } from '@/hooks/useCineRun'
 import { buildVesselTree, sideOf, type InjectionSide } from '@/utils/contrast'
@@ -39,6 +41,7 @@ export default function App() {
   const [coronarySystem, setCoronarySystem] = useState<CoronarySystem>('both')
   const allSegments = useArteryData(dominance)
   const [highlightSegmentId, setHighlightSegmentId] = useState<string | null>(null)
+  const [aboutOpen, setAboutOpen] = useState(false)
   // A challenge target shows only its own side, as a selective injection would.
   const highlightSide = useMemo(() => {
     const target = allSegments.find(s => s.id === highlightSegmentId)
@@ -63,7 +66,7 @@ export default function App() {
       <header className="flex items-center justify-between px-4 py-2 border-b border-gray-800/50 shrink-0">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-bold tracking-tight">
-            <span className="text-indigo-400">II</span>views
+            <span className="text-indigo-400">CathLab</span> Trainer
           </h1>
           <span className="text-xs font-bold uppercase tracking-widest text-white bg-indigo-600 rounded-md px-2 py-0.5 shadow-sm">
             Beta
@@ -93,6 +96,12 @@ export default function App() {
           <div className="text-[10px] text-gray-600 hidden sm:block">
             {segments.length} segments | {dominance}-dominant
           </div>
+          <button
+            onClick={() => setAboutOpen(true)}
+            className="px-2.5 py-1 text-xs rounded-md text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-all"
+          >
+            About
+          </button>
         </div>
       </header>
 
@@ -263,17 +272,19 @@ export default function App() {
           </div>
           )}
 
-          {/* 3D heart model attribution — required by its CC BY 4.0 license */}
-          <div className="text-center text-[9px] leading-relaxed text-gray-600">
+          {/* Footer: disclaimer, and the 3D heart model attribution its CC BY 4.0 licence requires */}
+          <footer className="text-center text-[9px] leading-relaxed text-gray-600">
+            <div className="text-[10px] font-medium text-gray-400">{DISCLAIMER}</div>
             Heart model:{' '}
             <a href="https://sketchfab.com/3d-models/realistic-human-heart-3f8072336ce94d18b3d0d055a1ece089" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-400">&ldquo;Realistic Human Heart&rdquo;</a>{' '}
             by{' '}
             <a href="https://sketchfab.com/neshallads" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-400">neshallads</a>,{' '}
             licensed{' '}
             <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-400">CC BY 4.0</a>
-          </div>
+          </footer>
         </div>
       </div>
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   )
 }

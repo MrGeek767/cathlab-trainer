@@ -1,0 +1,35 @@
+import { describe, it, expect } from 'vitest'
+import { CREDITS, REFERENCES, DISCLAIMER, SIMPLIFICATIONS } from './credits'
+
+describe('credits', () => {
+  it('every credit is complete and links over https', () => {
+    for (const credit of CREDITS) {
+      expect(credit.item.trim(), credit.item).not.toBe('')
+      expect(credit.author.trim(), credit.item).not.toBe('')
+      expect(credit.licence.trim(), credit.item).not.toBe('')
+      expect(credit.url.startsWith('https://'), credit.item).toBe(true)
+    }
+  })
+
+  it('the two required credits are present', () => {
+    const items = CREDITS.map(c => c.item)
+    expect(items.some(item => item.includes('iiviewer'))).toBe(true)
+    expect(items.some(item => item.includes('Realistic Human Heart'))).toBe(true)
+  })
+
+  it('every reference links over https', () => {
+    expect(REFERENCES.length).toBeGreaterThan(0)
+    for (const reference of REFERENCES) {
+      expect(reference.label.trim()).not.toBe('')
+      expect(reference.url.startsWith('https://'), reference.label).toBe(true)
+    }
+  })
+
+  it('the disclaimer text is exact', () => {
+    expect(DISCLAIMER).toBe('Educational simulation, not for clinical use.')
+  })
+
+  it('the simplifications are listed', () => {
+    expect(SIMPLIFICATIONS).toHaveLength(4)
+  })
+})
