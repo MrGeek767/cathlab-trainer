@@ -18,3 +18,9 @@ export const RATING_WORD: Record<SegmentRating, string> = {
   '+': 'Fair',
   '-': 'Poor',
 }
+
+/** Right and wrong answers, on the same green and red as the ratings. */
+export const ANSWER_BADGE = {
+  right: 'bg-ecg/15 text-ecg ring-1 ring-ecg/40',
+  wrong: 'bg-alarm/10 text-alarm ring-1 ring-alarm/30',
+} as const

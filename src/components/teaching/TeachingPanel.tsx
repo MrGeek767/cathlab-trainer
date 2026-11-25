@@ -84,7 +84,7 @@ export function TeachingPanel({ raoLao, cranialCaudal }: TeachingPanelProps) {
             : preset.expectedFindings
           ).map((finding, i) => (
             <li key={i} className="flex items-start gap-2 text-ink">
-              <span className="text-emerald-400 mt-0.5 shrink-0">&#x2022;</span>
+              <span aria-hidden className="text-drape mt-0.5 shrink-0">&#x2022;</span>
               <span>{finding}</span>
             </li>
           ))}

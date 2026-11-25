@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ArterySegment } from '@/types/anatomy'
-import type { SegmentRating } from '@/types/quality'
 import { scoreShowMe, showMeVerdict, type ShowMeItem, type ShowMeResult } from '@/challenges/show-me'
 import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
 import { formatView } from '@/utils/format-view'
+import { RATING_BADGE } from '@/components/ui/rating'
 
 interface ShowMePanelProps {
   item: ShowMeItem
@@ -23,13 +23,6 @@ interface Shot {
   raoLao: number
   cranialCaudal: number
   result: ShowMeResult
-}
-
-const RATING_STYLE: Record<SegmentRating, string> = {
-  '+++': 'text-emerald-400 bg-emerald-500/10',
-  '++': 'text-yellow-400 bg-yellow-500/10',
-  '+': 'text-orange-400 bg-orange-500/10',
-  '-': 'text-red-400 bg-red-500/10',
 }
 
 /** One "Show me" item: set the C-arm, take one shot, and (in learner mode) see how it rates. */
@@ -88,7 +81,7 @@ export function ShowMePanel({
       {current && revealFeedback && (
         <div ref={feedbackRef} className="flex flex-col gap-3">
           <div className="flex items-start gap-3">
-            <span className={`shrink-0 rounded-md px-2 py-1 font-display tabular-nums text-sm font-bold ${RATING_STYLE[current.result.rating]}`}>
+            <span className={`shrink-0 animate-pop rounded-md px-2 py-1 font-display tabular-nums text-sm font-bold ${RATING_BADGE[current.result.rating]}`}>
               {current.result.rating}
             </span>
             <p className="text-sm text-ink">{showMeVerdict(current.result)}</p>

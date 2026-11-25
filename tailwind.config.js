@@ -33,11 +33,13 @@ export default {
         'panel-in': { from: { opacity: '0', transform: 'translateY(6px)' }, to: { opacity: '1', transform: 'none' } },
         pop: { '0%': { opacity: '0', transform: 'scale(0.92)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
         lamp: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.55' } },
+        grow: { from: { transform: 'scaleX(0)' }, to: { transform: 'scaleX(1)' } },
       },
       animation: {
         'panel-in': 'panel-in 180ms ease-out both',
         pop: 'pop 160ms ease-out both',
         lamp: 'lamp 1.2s ease-in-out infinite',
+        grow: 'grow 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
       },
     },
   },

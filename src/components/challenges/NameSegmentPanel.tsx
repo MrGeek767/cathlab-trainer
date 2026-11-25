@@ -4,6 +4,7 @@ import type { AngleState } from '@/types/angles'
 import { VIEW_PRESETS } from '@/data/presets'
 import { segmentLabel, type NameSegmentQuestion } from '@/challenges/name-segment'
 import { formatView } from '@/utils/format-view'
+import { ANSWER_BADGE } from '@/components/ui/rating'
 
 interface NameSegmentPanelProps {
   question: NameSegmentQuestion
@@ -23,8 +24,8 @@ type OptionState = 'idle' | 'right' | 'wrong' | 'chosen' | 'other'
 
 const OPTION_STYLE: Record<OptionState, string> = {
   idle: 'bg-raised text-ink hover:bg-line',
-  right: 'bg-emerald-600/20 text-emerald-300 ring-1 ring-emerald-500/50',
-  wrong: 'bg-red-600/20 text-red-300 ring-1 ring-red-500/50',
+  right: `${ANSWER_BADGE.right} animate-pop`,
+  wrong: `${ANSWER_BADGE.wrong} animate-pop`,
   chosen: 'bg-drape-soft text-ink ring-1 ring-drape/60',
   other: 'bg-raised/60 text-ink-faint',
 }
@@ -108,7 +109,7 @@ export function NameSegmentPanel({
       </div>
 
       {choice !== null && revealFeedback && (
-        <p ref={feedbackRef} className="text-sm text-ink">
+        <p ref={feedbackRef} className="animate-pop text-sm text-ink">
           {choice === question.answer ? 'Correct.' : `Not quite. It is the ${labelOf(question.answer)}.`}
         </p>
       )}

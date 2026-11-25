@@ -65,7 +65,7 @@ export function QuizPanel({ raoLao, cranialCaudal }: QuizPanelProps) {
       {/* Score bar */}
       <div className="flex items-center justify-between text-xs text-ink-faint">
         <span>Question {state.currentIndex + 1} / {totalQuestions}</span>
-        <span className="text-emerald-400">Score: {state.score}</span>
+        <span key={state.score} className="animate-pop font-display text-sm tabular-nums text-ecg">Score {state.score}</span>
       </div>
 
       {/* Progress bar */}
@@ -107,13 +107,13 @@ export function QuizPanel({ raoLao, cranialCaudal }: QuizPanelProps) {
 
       {/* Feedback */}
       {state.answered && (
-        <div className={`p-3 rounded-lg border ${
+        <div className={`animate-pop p-3 rounded-lg border ${
           state.lastCorrect
-            ? 'bg-emerald-500/10 border-emerald-500/30'
-            : 'bg-red-500/10 border-red-500/30'
+            ? 'bg-ecg/10 border-ecg/30'
+            : 'bg-alarm/10 border-alarm/30'
         }`}>
           <p className={`font-bold text-sm mb-1 ${
-            state.lastCorrect ? 'text-emerald-400' : 'text-red-400'
+            state.lastCorrect ? 'text-ecg' : 'text-alarm'
           }`}>
             {state.lastCorrect ? 'Correct!' : 'Incorrect'}
           </p>
@@ -164,8 +164,8 @@ function ChoiceSection({
         const isCorrect = option === question.answer
         let style = 'border-line text-ink hover:border-ink-faint'
         if (answered) {
-          if (isCorrect) style = 'border-emerald-500 text-emerald-400 bg-emerald-500/10'
-          else if (isSelected && !isCorrect) style = 'border-red-500 text-red-400 bg-red-500/10'
+          if (isCorrect) style = 'border-ecg text-ecg bg-ecg/10'
+          else if (isSelected && !isCorrect) style = 'border-alarm text-alarm bg-alarm/10'
           else style = 'border-line text-ink-faint'
         } else if (isSelected) {
           style = 'border-drape text-white bg-drape/10'
@@ -237,7 +237,7 @@ function AngleTargetSection({
       </div>
 
       {withinRange && !answered && (
-        <div className="text-center text-emerald-400 text-xs animate-pulse">
+        <div className="animate-pop text-center text-xs font-semibold text-ecg">
           Both axes within tolerance!
         </div>
       )}
