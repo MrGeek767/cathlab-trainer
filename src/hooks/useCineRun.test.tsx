@@ -81,4 +81,70 @@ describe('useCineRun', () => {
     expect(cine!.opacity).toBeNull()
     root.unmount()
   })
+
+  function mount() {
+    let cine: ReturnType<typeof useCineRun> | null = null
+    function Harness() {
+      cine = useCineRun(tree, 'left')
+      return <button id="play" onClick={cine.play} />
+    }
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    root.render(<Harness />)
+    const play = () => host.querySelector('#play')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    return { get: () => cine!, play, root }
+  }
+  async function at(ms: number) {
+    now = ms
+    runFrame()
+    await settle()
+  }
+
+  it('steps the image at 15 frames a second, as cine does', async () => {
+    const { get, play, root } = mount()
+    await settle()
+    play()
+    await settle()
+    await at(10)
+    expect(get().frame?.index).toBe(1)
+    const first = get().opacity
+    await at(40) // same 1/15 s frame: nothing new to show
+    expect(get().opacity).toBe(first)
+    expect(get().frame?.index).toBe(1)
+    await at(70)
+    expect(get().frame?.index).toBe(2)
+    await at(140)
+    expect(get().frame?.index).toBe(3)
+    root.unmount()
+  })
+
+  it('shows no contrast before the first frame is drawn, never the road map', async () => {
+    const { get, play, root } = mount()
+    await settle()
+    play()
+    await settle()
+    expect(get().playing).toBe(true)
+    expect(get().opacity).not.toBeNull()
+    root.unmount()
+  })
+
+  it('lasts six and a half beats of coronary flow, then stops by itself', async () => {
+    const { get, play, root } = mount()
+    await settle()
+    play()
+    await settle()
+    await at(5500)
+    expect(get().playing).toBe(true)
+    const frame = get().frame!
+    expect(frame.total).toBeGreaterThanOrEqual(84)
+    expect(frame.total).toBeLessThanOrEqual(86)
+    expect(frame.index).toBeLessThanOrEqual(frame.total)
+    await at(5800)
+    expect(get().playing).toBe(false)
+    expect(get().opacity).toBeNull()
+    expect(get().frame).toBeNull()
+    root.unmount()
+  })
 })
+

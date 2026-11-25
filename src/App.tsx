@@ -126,6 +126,8 @@ export default function App() {
                 opacity={cine.opacity}
                 highlightSegmentId={highlightSegmentId}
                 acquiring={cine.playing}
+                cineFrame={cine.frame}
+                heartbeat={heartbeat}
                 realFluoro={realFluoro}
                 dominanceLabel={DOMINANCE_LABEL[dominance]}
               />
@@ -142,6 +144,8 @@ export default function App() {
             <span className="pointer-events-none absolute left-3 top-2 z-10 text-xs text-ink-faint">3D heart. Drag to turn.</span>
             <Scene3D
               segments={segments}
+              anatomy={allSegments}
+              heartbeat={heartbeat}
               hoveredSegmentId={quizLock ? null : hoveredSegmentId}
               selectedSegmentId={quizLock ? null : selectedSegmentId}
               onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}

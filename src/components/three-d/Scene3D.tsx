@@ -1,4 +1,4 @@
-import { useRef, Suspense } from 'react'
+import { useMemo, useRef, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -7,9 +7,15 @@ import { HeartGLTF } from './HeartGLTF'
 import { CoronaryArteries3D } from './CoronaryArteries3D'
 import { anglesToPosition } from '@/utils/carm-math'
 import type { ArterySegment } from '@/types/anatomy'
+import { HeartMotion } from '@/components/two-d/HeartMotion'
+import { heartFromAnatomy } from '@/utils/heart-motion'
+import { HEART_RATE } from '@/utils/cardiac-cycle'
 
 interface Scene3DProps {
   segments: ArterySegment[]
+  /** The whole tree for this dominance; the heart's motion is fitted to it. */
+  anatomy: ArterySegment[]
+  heartbeat: boolean
   hoveredSegmentId: string | null
   selectedSegmentId: string | null
   onHoverSegment: (id: string | null) => void
@@ -40,6 +46,8 @@ function AngleDrivenCamera({
 
 export function Scene3D({
   segments,
+  anatomy,
+  heartbeat,
   hoveredSegmentId,
   selectedSegmentId,
   onHoverSegment,
@@ -47,6 +55,7 @@ export function Scene3D({
   raoLao,
   cranialCaudal,
 }: Scene3DProps) {
+  const heart = useMemo(() => heartFromAnatomy(anatomy), [anatomy])
   return (
     <Canvas
       camera={{ position: [0, 0, 6], fov: 45, near: 0.1, far: 100 }}
@@ -62,20 +71,22 @@ export function Scene3D({
           <div className="text-ink-faint text-sm animate-pulse">Loading the heart model…</div>
         </Html>
       }>
-        <HeartGLTF
-          style="clay"
-          hoveredSegmentId={hoveredSegmentId}
-          selectedSegmentId={selectedSegmentId}
-          onHoverSegment={onHoverSegment}
-          onClickSegment={onClickSegment}
-        />
-        <CoronaryArteries3D
-          segments={segments}
-          hoveredSegmentId={hoveredSegmentId}
-          selectedSegmentId={selectedSegmentId}
-          onHoverSegment={onHoverSegment}
-          onClickSegment={onClickSegment}
-        />
+        <HeartMotion frame={heart.frame} beating={heartbeat} heartRate={HEART_RATE} stepped={false}>
+          <HeartGLTF
+            style="clay"
+            hoveredSegmentId={hoveredSegmentId}
+            selectedSegmentId={selectedSegmentId}
+            onHoverSegment={onHoverSegment}
+            onClickSegment={onClickSegment}
+          />
+          <CoronaryArteries3D
+            segments={segments}
+            hoveredSegmentId={hoveredSegmentId}
+            selectedSegmentId={selectedSegmentId}
+            onHoverSegment={onHoverSegment}
+            onClickSegment={onClickSegment}
+          />
+        </HeartMotion>
       </Suspense>
     </Canvas>
   )

@@ -1,4 +1,5 @@
 import { formatOblique, formatTilt } from '@/utils/format-view'
+import { EcgTrace } from './EcgTrace'
 
 interface MonitorOverlayProps {
   raoLao: number
@@ -44,6 +45,7 @@ export function MonitorOverlay(props: MonitorOverlayProps) {
               </span>
             )}
           </div>
+          <EcgTrace heartRate={props.heartRate} className="mb-1 hidden h-9 min-w-0 max-w-[44%] flex-1 sm:block" />
           <div className="text-right leading-tight">
             <div className="text-base font-semibold tabular-nums text-ecg sm:text-lg">HR {props.heartRate}</div>
             <div className="text-xs opacity-80 sm:text-sm">{props.realFluoro ? 'REAL FLUORO' : 'ROAD MAP'}</div>

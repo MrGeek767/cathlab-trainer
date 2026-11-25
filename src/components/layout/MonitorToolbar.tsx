@@ -49,7 +49,7 @@ export function MonitorToolbar(props: MonitorToolbarProps) {
       {fluoro && (
         <Toggle label="Invert" pressed={props.inverted} onChange={props.onInverted} title="Show contrast white on black" />
       )}
-      <Toggle label="Heartbeat" pressed={props.heartbeat} onChange={props.onHeartbeat} title="Move the heart with each beat" />
+      <Toggle label="Motion" pressed={props.heartbeat} onChange={props.onHeartbeat} title="Move the heart and coronaries with each beat" />
     </div>
   )
 }

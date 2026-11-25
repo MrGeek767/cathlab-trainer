@@ -2,14 +2,15 @@ import * as THREE from 'three'
 import type { ArterySegment } from '@/types/anatomy'
 import { buildArterySpline, ANATOMY_SCALE } from '@/utils/geometry'
 import { ANATOMY_UNIT_MM, segmentLengthMm } from '@/data/segment-sizes'
+import { HEART_RATE, beatPeriodMs } from '@/utils/cardiac-cycle'
 
 /**
  * Contrast injection model for cine runs.
  *
  * Contrast enters at the ostium of the injected side, advances along the tree
  * at a constant speed until the longest path is full (fill), stays (hold), then
- * clears from the ostium outward at the same speed (washout). Timing is
- * illustrative, not physiological.
+ * clears from the ostium outward at the same speed (washout). Times here are flow
+ * time (see cardiac-cycle.ts), so the column surges forward in diastole.
  */
 
 export type InjectionSide = 'left' | 'right'
@@ -40,7 +41,18 @@ export interface CineTiming {
   washoutMs: number
 }
 
-export const DEFAULT_CINE_TIMING: CineTiming = { fillMs: 900, holdMs: 2000, washoutMs: 1100 }
+/**
+ * A run in heartbeats: contrast reaches the distal vessels in about a beat and a half,
+ * the injection holds them full for three, and they clear over two.
+ */
+export const CINE_BEATS = { fill: 1.5, hold: 3, washout: 2 } as const
+
+export function cineTimingForHeartRate(heartRate: number): CineTiming {
+  const beat = beatPeriodMs(heartRate)
+  return { fillMs: CINE_BEATS.fill * beat, holdMs: CINE_BEATS.hold * beat, washoutMs: CINE_BEATS.washout * beat }
+}
+
+export const DEFAULT_CINE_TIMING: CineTiming = cineTimingForHeartRate(HEART_RATE)
 
 const EMPTY: OpaqueRange = { from: 0, to: 0 }
 const PARENT_SAMPLES = 100

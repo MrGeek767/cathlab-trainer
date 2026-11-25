@@ -2,8 +2,8 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { ArterySegment } from '@/types/anatomy'
-import { ANATOMY_SCALE, MM_TO_SCENE, buildArterySpline } from '@/utils/geometry'
-import { fitEllipsoid } from '@/utils/ellipsoid'
+import { ANATOMY_SCALE, MM_TO_SCENE } from '@/utils/geometry'
+import type { Ellipsoid } from '@/utils/ellipsoid'
 import { RIB_LEVELS, RIB_RADIUS_MM, ribPoints } from '@/utils/ribs'
 import { densityMaterial, BODY_LAYER } from './density'
 
@@ -30,15 +30,7 @@ const HEART_FIT = 1.12
  * so it lies under the vessels in every dominance. (The 3D model shows valves and
  * great-vessel walls inside it, which an angiogram never does.)
  */
-export function HeartShadow({ segments }: { segments: ArterySegment[] }) {
-  const ellipsoid = useMemo(() => {
-    const points = segments.flatMap(segment =>
-      buildArterySpline(segment.controlPoints)
-        .getSpacedPoints(12)
-        .map(p => [p.x, p.y, p.z] as [number, number, number]),
-    )
-    return fitEllipsoid(points)
-  }, [segments])
+export function HeartShadow({ ellipsoid }: { ellipsoid: Ellipsoid }) {
   const geometry = useMemo(() => organicShape(), [])
   const material = useMemo(() => densityMaterial({ density: BODY_DENSITY.heart, doubleSided: true }), [])
   useEffect(

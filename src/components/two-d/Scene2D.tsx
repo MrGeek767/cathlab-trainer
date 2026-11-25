@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { ArterySegment } from '@/types/anatomy'
@@ -9,6 +9,9 @@ import { ProjectedArteries } from './ProjectedArteries'
 import { MonitorOverlay } from './MonitorOverlay'
 import { Landmarks3D } from './Landmarks3D'
 import { AorticRoot, HeartShadow, Ribs } from './BodyShadows'
+import { HeartMotion } from './HeartMotion'
+import { heartFromAnatomy } from '@/utils/heart-motion'
+import { HEART_RATE } from '@/utils/cardiac-cycle'
 import { FluoroPipeline, NOISE } from './FluoroPipeline'
 
 /** The diagram's background: dark like the rest of the room, so every artery colour reads. */
@@ -35,6 +38,8 @@ interface Scene2DProps {
   acquiring?: boolean
   cineFrame?: { index: number; total: number } | null
   heartRate?: number
+  /** Move the heart and coronaries with each beat (fluoro only). */
+  heartbeat?: boolean
   realFluoro?: boolean
   dominanceLabel?: string
 }
@@ -74,11 +79,14 @@ export function Scene2D({
   highlightSegmentId = null,
   acquiring = false,
   cineFrame = null,
-  heartRate = 70,
+  heartRate = HEART_RATE,
+  heartbeat = false,
   realFluoro = false,
   dominanceLabel = '',
 }: Scene2DProps) {
   const isFluoro = viewMode === 'fluoroscopy'
+  // The heart is fitted to the whole tree, so it does not change with the arteries filter.
+  const heart = useMemo(() => heartFromAnatomy(anatomy), [anatomy])
 
   return (
     <div className="relative h-full w-full">
@@ -97,20 +105,22 @@ export function Scene2D({
             <FluoroPipeline invert={invertLut} noise={acquiring ? NOISE.cine : NOISE.fluoro} />
             <Landmarks3D />
             <Ribs />
-            <HeartShadow segments={anatomy} />
             <AorticRoot segments={anatomy} />
           </>
         )}
-        <ProjectedArteries
-          segments={segments}
-          viewMode={viewMode}
-          hoveredSegmentId={hoveredSegmentId}
-          onHoverSegment={onHoverSegment}
-          onClickSegment={onClickSegment}
-          showLabels={showLabels}
-          opacity={opacity}
-          highlightSegmentId={highlightSegmentId}
-        />
+        <HeartMotion frame={heart.frame} beating={heartbeat && isFluoro} heartRate={heartRate}>
+          {isFluoro && <HeartShadow ellipsoid={heart.ellipsoid} />}
+          <ProjectedArteries
+            segments={segments}
+            viewMode={viewMode}
+            hoveredSegmentId={hoveredSegmentId}
+            onHoverSegment={onHoverSegment}
+            onClickSegment={onClickSegment}
+            showLabels={showLabels}
+            opacity={opacity}
+            highlightSegmentId={highlightSegmentId}
+          />
+        </HeartMotion>
       </Canvas>
 
       <MonitorOverlay
