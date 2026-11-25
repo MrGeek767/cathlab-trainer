@@ -44,6 +44,6 @@ export const NON_AFFILIATION = 'CathLab Trainer is an independent project and is
 export const SIMPLIFICATIONS: string[] = [
   'The coronary tree is a hand-built model, not a real patient.',
   'View ratings follow published textbook tables; the geometry shows foreshortening and overlap only.',
-  'Contrast flow timing is illustrative.',
-  'Spine and diaphragm are simplified shapes for orientation.',
+  'Heart motion, contrast filling and coronary flow are simple models at a fixed heart rate of 70, and the patient never breathes.',
+  'The heart shadow, spine, ribs, diaphragm, aorta and guide catheter are simplified shapes for orientation.',
 ]

@@ -36,4 +36,13 @@ describe('credits', () => {
   it('the simplifications are listed', () => {
     expect(SIMPLIFICATIONS).toHaveLength(4)
   })
+
+  it('the simplifications cover the simulated motion, flow and catheter, so learners know what is modelled', () => {
+    const text = SIMPLIFICATIONS.join(' ')
+    expect(text).toMatch(/heart motion/i)
+    expect(text).toMatch(/contrast/i)
+    expect(text).toMatch(/catheter/i)
+    expect(text).toMatch(/breath/i)
+  })
 })
+
