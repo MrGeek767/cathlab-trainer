@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { assetUrl } from '@/utils/asset-url'
+import { MODEL_TO_PATIENT } from '@/data/orientation'
 import type { ArterySegment } from '@/types/anatomy'
 import {
   extractHeartGeometry,
@@ -41,10 +42,15 @@ export function CoronaryArteries3D({
   const { scene } = useGLTF(assetUrl('models/heart/scene.gltf'), false)
 
   // Extract baked heart geometry for raycasting (matches <primitive scale={2.2}>)
-  const { mesh: heartMesh, center: heartCenter } = useMemo(
-    () => extractHeartGeometry(scene, 2.2),
-    [scene],
-  )
+  // ...then turned into the chest position, like the oriented coronary tree.
+  const { mesh: heartMesh, center: heartCenter } = useMemo(() => {
+    const baked = extractHeartGeometry(scene, 2.2)
+    baked.mesh.geometry.applyMatrix4(MODEL_TO_PATIENT)
+    baked.mesh.geometry.computeBoundingBox()
+    baked.mesh.geometry.computeBoundingSphere()
+    baked.center.applyMatrix4(MODEL_TO_PATIENT)
+    return baked
+  }, [scene])
 
   // Build tube geometries projected onto heart surface
   const tubeData = useMemo(() => {

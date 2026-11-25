@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import { useGLTF } from '@react-three/drei'
 import { assetUrl } from '@/utils/asset-url'
+import { MODEL_TO_PATIENT_QUATERNION } from '@/data/orientation'
 
 export type HeartStyle = 'realistic' | 'ghost' | 'clay' | 'flat' | 'wireframe' | 'toon'
 
@@ -111,7 +112,12 @@ export function HeartGLTF({
     return clone
   }, [scene, style])
 
-  return <primitive object={clonedScene} scale={2.2} />
+  // The heart turns with the coronary tree into its chest position (see data/orientation.ts).
+  return (
+    <group quaternion={MODEL_TO_PATIENT_QUATERNION}>
+      <primitive object={clonedScene} scale={2.2} />
+    </group>
+  )
 }
 
 useGLTF.preload(assetUrl('models/heart/scene.gltf'), false)
