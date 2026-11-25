@@ -14,9 +14,11 @@ import { QualityPanel } from '@/components/quality/QualityPanel'
 import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
 import { ShowMePanel } from '@/components/challenges/ShowMePanel'
 import { SHOW_ME_ITEMS } from '@/challenges/show-me'
+import { NameSegmentPanel } from '@/components/challenges/NameSegmentPanel'
+import { buildNameSegmentQuestion, type NameSegmentQuestion } from '@/challenges/name-segment'
 import { CineControls } from '@/components/controls/CineControls'
 import { useCineRun } from '@/hooks/useCineRun'
-import { buildVesselTree, type InjectionSide } from '@/utils/contrast'
+import { buildVesselTree, sideOf, type InjectionSide } from '@/utils/contrast'
 
 const TeachingPanel = lazy(() => import('@/components/teaching/TeachingPanel').then(m => ({ default: m.TeachingPanel })))
 const QuizPanel = lazy(() => import('@/components/teaching/QuizPanel').then(m => ({ default: m.QuizPanel })))
@@ -24,6 +26,13 @@ import type { DominanceType, ViewMode, AppMode, CoronarySystem, PresetView } fro
 
 // Until the challenge shell lands (Task 9), the challenges mode shows the first item.
 const SHOW_ME_PREVIEW = SHOW_ME_ITEMS[0]
+
+type ChallengeTab = 'show-me' | 'name-segment'
+const CHALLENGE_TABS: { kind: ChallengeTab; label: string }[] = [
+  { kind: 'show-me', label: 'Show me' },
+  { kind: 'name-segment', label: 'Name the segment' },
+]
+const IGNORE = () => {}
 
 export default function App() {
   const { angles, setRaoLao, setCranialCaudal, adjustRaoLao, adjustCranialCaudal, animateTo } = useAngleState()
@@ -40,15 +49,24 @@ export default function App() {
   const [showLabels, setShowLabels] = useState(false)
   const [coronarySystem, setCoronarySystem] = useState<CoronarySystem>('both')
   const allSegments = useArteryData(dominance)
-  const segments = useMemo(() =>
-    coronarySystem === 'both'
-      ? allSegments
-      : allSegments.filter(s => {
-          const isLeft = s.territory === 'LM' || s.territory === 'LAD' || s.territory === 'LCx'
-          return coronarySystem === 'left' ? isLeft : !isLeft
-        }),
-    [allSegments, coronarySystem],
-  )
+  const [highlightSegmentId, setHighlightSegmentId] = useState<string | null>(null)
+  // A challenge target shows only its own side, as a selective injection would.
+  const highlightSide = useMemo(() => {
+    const target = allSegments.find(s => s.id === highlightSegmentId)
+    return target ? sideOf(target) : null
+  }, [allSegments, highlightSegmentId])
+  const segments = useMemo(() => {
+    const side = highlightSide ?? (coronarySystem === 'both' ? null : coronarySystem)
+    return side ? allSegments.filter(s => sideOf(s) === side) : allSegments
+  }, [allSegments, coronarySystem, highlightSide])
+  // While a target is highlighted, hover and selection are off everywhere so its name cannot leak.
+  const quizLock = highlightSegmentId !== null
+  const [challengeTab, setChallengeTab] = useState<ChallengeTab>('show-me')
+  const [nameQuestion, setNameQuestion] = useState<NameSegmentQuestion | null>(null)
+  const openChallengeTab = (kind: ChallengeTab) => {
+    setChallengeTab(kind)
+    if (kind === 'name-segment') setNameQuestion(buildNameSegmentQuestion(allSegments, Math.random))
+  }
   const { hoveredSegmentId, setHoveredSegmentId, selectedSegmentId, setSelectedSegmentId } = useHoveredSegment()
   const [injectionSide, setInjectionSide] = useState<InjectionSide>('left')
   const vesselTree = useMemo(() => buildVesselTree(allSegments), [allSegments])
@@ -108,10 +126,10 @@ export default function App() {
           </div>
           <Scene3D
             segments={segments}
-            hoveredSegmentId={hoveredSegmentId}
-            selectedSegmentId={selectedSegmentId}
-            onHoverSegment={setHoveredSegmentId}
-            onClickSegment={setSelectedSegmentId}
+            hoveredSegmentId={quizLock ? null : hoveredSegmentId}
+            selectedSegmentId={quizLock ? highlightSegmentId : selectedSegmentId}
+            onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}
+            onClickSegment={quizLock ? IGNORE : setSelectedSegmentId}
             raoLao={angles.raoLao}
             cranialCaudal={angles.cranialCaudal}
 
@@ -148,6 +166,7 @@ export default function App() {
             invertLut={invertLut}
             showLabels={appMode === 'guided' || showLabels}
             opacity={cine.opacity}
+            highlightSegmentId={highlightSegmentId}
           />
         </div>
 
@@ -165,16 +184,45 @@ export default function App() {
               cranialCaudal={angles.cranialCaudal}
             />
           )}
-          {appMode === 'challenges' && SHOW_ME_PREVIEW && (
-            <ShowMePanel
-              item={SHOW_ME_PREVIEW}
-              segments={allSegments}
-              raoLao={angles.raoLao}
-              cranialCaudal={angles.cranialCaudal}
-              revealFeedback
-              onSubmit={() => {}}
-              onGoToBest={(raoLao, cranialCaudal) => animateTo({ raoLao, cranialCaudal })}
-            />
+          {appMode === 'challenges' && (
+            <div className="h-full min-h-0 flex flex-col">
+              <div className="flex gap-1 px-2 pt-2 pb-1 bg-gray-900/80 border-l border-b border-gray-800/50">
+                {CHALLENGE_TABS.map(({ kind, label }) => (
+                  <button
+                    key={kind}
+                    onClick={() => openChallengeTab(kind)}
+                    className={`px-2.5 py-1 text-xs rounded-md transition-all ${
+                      challengeTab === kind ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-1 min-h-0">
+                {challengeTab === 'show-me' && SHOW_ME_PREVIEW && (
+                  <ShowMePanel
+                    item={SHOW_ME_PREVIEW}
+                    segments={allSegments}
+                    raoLao={angles.raoLao}
+                    cranialCaudal={angles.cranialCaudal}
+                    revealFeedback
+                    onSubmit={IGNORE}
+                    onGoToBest={(raoLao, cranialCaudal) => animateTo({ raoLao, cranialCaudal })}
+                  />
+                )}
+                {challengeTab === 'name-segment' && nameQuestion && (
+                  <NameSegmentPanel
+                    question={nameQuestion}
+                    segments={allSegments}
+                    revealFeedback
+                    onAnswer={IGNORE}
+                    animateTo={animateTo}
+                    onHighlightChange={setHighlightSegmentId}
+                  />
+                )}
+              </div>
+            </div>
           )}
         </Suspense>
       </div>
@@ -250,12 +298,12 @@ export default function App() {
               raoLao={angles.raoLao}
               cranialCaudal={angles.cranialCaudal}
               segments={segments}
-              hoveredSegmentId={hoveredSegmentId}
-              onHoverSegment={setHoveredSegmentId}
+              hoveredSegmentId={quizLock ? null : hoveredSegmentId}
+              onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}
             />
             <OptimalViewMap
               segments={segments}
-              segmentId={selectedSegmentId ?? hoveredSegmentId}
+              segmentId={quizLock ? null : selectedSegmentId ?? hoveredSegmentId}
               raoLao={angles.raoLao}
               cranialCaudal={angles.cranialCaudal}
               onPick={(rl, cc) => animateTo({ raoLao: rl, cranialCaudal: cc })}

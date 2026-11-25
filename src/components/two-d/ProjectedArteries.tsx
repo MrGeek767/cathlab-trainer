@@ -20,12 +20,21 @@ interface ProjectedArteriesProps {
   showLabels?: boolean
   /** Opaque part of each segment during a cine run; null shows the full road map. */
   opacity?: Map<string, OpaqueRange> | null
+  /**
+   * A challenge target: drawn strongly, the rest dimmed, with no labels and no hover,
+   * so the name cannot be read off the screen.
+   */
+  highlightSegmentId?: string | null
 }
+
+type Tone = 'strong' | 'normal' | 'dim'
 
 function ProjectedArtery({
   segment,
   viewMode,
   isHovered,
+  tone,
+  labelsAllowed,
   showLabels,
   range,
   onPointerEnter,
@@ -35,11 +44,13 @@ function ProjectedArtery({
   segment: ArterySegment
   viewMode: ViewMode
   isHovered: boolean
+  tone: Tone
+  labelsAllowed: boolean
   showLabels?: boolean
   range: OpaqueRange | null
-  onPointerEnter: () => void
-  onPointerLeave: () => void
-  onClick: () => void
+  onPointerEnter?: () => void
+  onPointerLeave?: () => void
+  onClick?: () => void
 }) {
   const { geometry, midpoint } = useMemo(() => {
     const curve = buildArterySpline(segment.controlPoints)
@@ -64,28 +75,30 @@ function ProjectedArtery({
     <group>
       <mesh
         geometry={geometry}
-        onPointerEnter={(e) => { e.stopPropagation(); onPointerEnter() }}
+        onPointerEnter={onPointerEnter && ((e) => { e.stopPropagation(); onPointerEnter() })}
         onPointerLeave={onPointerLeave}
-        onClick={(e) => { e.stopPropagation(); onClick() }}
+        onClick={onClick && ((e) => { e.stopPropagation(); onClick() })}
       >
         {isFluoro ? (
           <meshBasicMaterial
-            color={isHovered ? '#ffffff' : '#cccccc'}
+            color={tone === 'strong' ? '#ffffff' : '#cccccc'}
             transparent
-            opacity={isHovered ? 0.95 : 0.7}
+            opacity={tone === 'strong' ? 0.95 : tone === 'dim' ? 0.45 : 0.7}
             depthTest={false}
             depthWrite={false}
           />
         ) : (
           <meshBasicMaterial
-            color={isHovered ? segment.color : new THREE.Color(segment.color).multiplyScalar(0.9)}
+            color={tone === 'strong' ? segment.color : new THREE.Color(segment.color).multiplyScalar(0.9)}
+            transparent={tone === 'dim'}
+            opacity={tone === 'dim' ? 0.3 : 1}
             depthTest={false}
             depthWrite={false}
           />
         )}
       </mesh>
 
-      {visible && ((viewMode === 'schematic') || isHovered || showLabels) && (
+      {visible && labelsAllowed && ((viewMode === 'schematic') || isHovered || showLabels) && (
         <Html
           position={[midpoint.x, midpoint.y + 0.12, midpoint.z]}
           center
@@ -114,22 +127,32 @@ export function ProjectedArteries({
   onClickSegment,
   showLabels,
   opacity = null,
+  highlightSegmentId = null,
 }: ProjectedArteriesProps) {
+  const highlighting = highlightSegmentId !== null
   return (
     <group>
-      {segments.map(segment => (
-        <ProjectedArtery
-          key={segment.id}
-          segment={segment}
-          viewMode={viewMode}
-          isHovered={hoveredSegmentId === segment.id}
-          showLabels={showLabels}
-          range={opacity ? opacity.get(segment.id) ?? { from: 0, to: 0 } : null}
-          onPointerEnter={() => onHoverSegment(segment.id)}
-          onPointerLeave={() => onHoverSegment(null)}
-          onClick={() => onClickSegment(segment.id)}
-        />
-      ))}
+      {segments.map(segment => {
+        const isHovered = !highlighting && hoveredSegmentId === segment.id
+        const tone: Tone = highlighting
+          ? segment.id === highlightSegmentId ? 'strong' : 'dim'
+          : isHovered ? 'strong' : 'normal'
+        return (
+          <ProjectedArtery
+            key={segment.id}
+            segment={segment}
+            viewMode={viewMode}
+            isHovered={isHovered}
+            tone={tone}
+            labelsAllowed={!highlighting}
+            showLabels={showLabels}
+            range={opacity ? opacity.get(segment.id) ?? { from: 0, to: 0 } : null}
+            onPointerEnter={highlighting ? undefined : () => onHoverSegment(segment.id)}
+            onPointerLeave={highlighting ? undefined : () => onHoverSegment(null)}
+            onClick={highlighting ? undefined : () => onClickSegment(segment.id)}
+          />
+        )
+      })}
     </group>
   )
 }

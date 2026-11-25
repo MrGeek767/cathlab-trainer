@@ -22,6 +22,8 @@ interface Scene2DProps {
   showLabels: boolean
   /** Opaque part of each segment during a cine run; null shows the full road map. */
   opacity?: Map<string, OpaqueRange> | null
+  /** Challenge target, drawn highlighted with labels and hover off. */
+  highlightSegmentId?: string | null
 }
 
 function CameraController({
@@ -62,6 +64,7 @@ export function Scene2D({
   invertLut,
   showLabels,
   opacity = null,
+  highlightSegmentId = null,
 }: Scene2DProps) {
   const isFluoro = viewMode === 'fluoroscopy'
 
@@ -101,6 +104,7 @@ export function Scene2D({
           onClickSegment={onClickSegment}
           showLabels={showLabels}
           opacity={opacity}
+          highlightSegmentId={highlightSegmentId}
         />
       </Canvas>
 
