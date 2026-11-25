@@ -13,4 +13,6 @@ export interface ArterySegment {
   endRadius: number
   color: string
   dominanceVariants: DominanceType[]
+  /** SYNTAX segment number (e.g. '6', '12a'); null for unnumbered branches. Set by applyAnatomy. */
+  syntaxSegment?: string | null
 }
