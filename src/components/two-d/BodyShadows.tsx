@@ -4,6 +4,7 @@ import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { ArterySegment } from '@/types/anatomy'
 import { ANATOMY_SCALE, MM_TO_SCENE } from '@/utils/geometry'
 import type { Ellipsoid } from '@/utils/ellipsoid'
+import { AORTA_DIRECTION, aorticRootCentre } from '@/utils/catheter'
 import { RIB_LEVELS, RIB_RADIUS_MM, ribPoints } from '@/utils/ribs'
 import { densityMaterial, BODY_LAYER } from './density'
 
@@ -91,11 +92,9 @@ const AORTA_RADIUS_MM = 14
  */
 export function AorticRoot({ segments }: { segments: ArterySegment[] }) {
   const geometry = useMemo(() => {
-    const lm = segments.find(s => s.id === 'lm')?.controlPoints[0]
-    const rca = segments.find(s => s.id === 'prox-rca')?.controlPoints[0]
-    if (!lm || !rca) return null
-    const root = new THREE.Vector3(...lm).add(new THREE.Vector3(...rca)).multiplyScalar(ANATOMY_SCALE / 2)
-    const up = new THREE.Vector3(-0.22, 1, 0.12).normalize()
+    const root = aorticRootCentre(segments)
+    if (!root) return null
+    const up = AORTA_DIRECTION
     const points = [
       root.clone().addScaledVector(up, -0.35),
       root.clone().addScaledVector(up, 1.2),

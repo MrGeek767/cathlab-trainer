@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ArterySegment } from '@/types/anatomy'
 import type { AngleState } from '@/types/angles'
@@ -27,6 +27,10 @@ interface ChallengeShellProps {
   angles: AngleState
   animateTo: (angles: AngleState) => void
   onHighlightChange: (segmentId: string | null) => void
+  /** Told whether an exam is running (exams use real fluoro); false when the shell closes. */
+  onExamChange?: (exam: boolean) => void
+  /** The monitor shows arteries only while contrast flows. */
+  realFluoro?: boolean
 }
 
 const KIND_LABEL: Record<ChallengeKind, string> = {
@@ -67,7 +71,14 @@ function loadBest(): Record<ChallengeKind, number> {
 }
 
 /** Kind tabs, Learner/Exam toggle and ten items per run, then a results screen. */
-export function ChallengeShell({ segments, angles, animateTo, onHighlightChange }: ChallengeShellProps) {
+export function ChallengeShell({
+  segments,
+  angles,
+  animateTo,
+  onHighlightChange,
+  onExamChange,
+  realFluoro = false,
+}: ChallengeShellProps) {
   const [run, setRun] = useState<Run>(() => newRun('show-me', 'learner', segments))
   const [best, setBest] = useState(loadBest)
 
@@ -78,6 +89,11 @@ export function ChallengeShell({ segments, angles, animateTo, onHighlightChange 
   const current = finished ? undefined : run.items[run.index]
   const answered = run.answers.length > run.index
   const learner = run.mode === 'learner'
+  const exam = run.mode === 'exam'
+  useEffect(() => {
+    onExamChange?.(exam)
+  }, [exam, onExamChange])
+  useEffect(() => () => onExamChange?.(false), [onExamChange])
 
   const record = (answer: AnswerRecord) =>
     setRun(r => (r.answers.length > r.index ? r : { ...r, answers: [...r.answers, answer] }))
@@ -179,6 +195,7 @@ export function ChallengeShell({ segments, angles, animateTo, onHighlightChange 
             raoLao={angles.raoLao}
             cranialCaudal={angles.cranialCaudal}
             revealFeedback={learner}
+            realFluoro={realFluoro}
             onSubmit={result => onShot(current.item, result)}
             onGoToBest={(raoLao, cranialCaudal) => animateTo({ raoLao, cranialCaudal })}
           />

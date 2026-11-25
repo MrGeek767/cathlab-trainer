@@ -12,6 +12,8 @@ interface ShowMePanelProps {
   raoLao: number
   cranialCaudal: number
   revealFeedback: boolean
+  /** The monitor shows arteries only while contrast flows. */
+  realFluoro?: boolean
   onSubmit: (result: ShowMeResult) => void
   onGoToBest: (raoLao: number, cranialCaudal: number) => void
 }
@@ -37,6 +39,7 @@ export function ShowMePanel({
   raoLao,
   cranialCaudal,
   revealFeedback,
+  realFluoro = false,
   onSubmit,
   onGoToBest,
 }: ShowMePanelProps) {
@@ -61,6 +64,11 @@ export function ShowMePanel({
       <div>
         <p className="mt-1 text-base font-semibold text-white">{item.prompt}</p>
         <p className="mt-1 text-xs text-ink-soft">Move the C-arm until you like the view, then take the shot.</p>
+        {realFluoro && (
+          <p className="mt-2 rounded-lg border border-xray/40 bg-xray-soft px-2.5 py-1.5 text-xs text-ink">
+            Real fluoro: the arteries show only while contrast flows. Press <strong className="text-xray">Inject contrast</strong> to check your view.
+          </p>
+        )}
       </div>
 
       <button

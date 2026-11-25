@@ -16,7 +16,7 @@ export interface VesselStyle {
   density: number
 }
 
-const FLUORO_DENSITY: Record<VesselTone, number> = { normal: 1, hover: 1.8, target: 1.8, dim: 0.45 }
+const FLUORO_DENSITY: Record<VesselTone, number> = { normal: 1, hover: 1.8, target: 2, dim: 0.3 }
 
 export function vesselStyle(viewMode: ViewMode, tone: VesselTone, segmentColor: string): VesselStyle {
   if (viewMode === 'fluoroscopy') {

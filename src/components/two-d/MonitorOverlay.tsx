@@ -14,6 +14,8 @@ interface MonitorOverlayProps {
   /** Real fluoro shows vessels only with contrast; road map always. */
   realFluoro: boolean
   dominanceLabel: string
+  /** Real fluoro between runs: remind the learner how to see the arteries. */
+  injectHint?: boolean
 }
 
 const SHADOW = '[text-shadow:0_0_3px_#000,0_1px_2px_#000]'
@@ -31,6 +33,11 @@ export function MonitorOverlay(props: MonitorOverlayProps) {
           {formatOblique(props.raoLao)}&nbsp;&nbsp;{formatTilt(props.cranialCaudal).toUpperCase()}
         </div>
       </div>
+      {props.fluoro && props.injectHint && (
+        <p className="mx-auto animate-panel-in rounded-full bg-black/60 px-3 py-1 font-sans text-xs text-white/90 [text-shadow:none] sm:text-sm">
+          Arteries show only while contrast flows. Press <span className="font-semibold text-xray">Inject contrast</span>.
+        </p>
+      )}
       {props.fluoro && (
         <div className="flex items-end justify-between gap-4">
           <div className="flex items-center gap-2 text-sm font-semibold tabular-nums tracking-wide sm:text-base">

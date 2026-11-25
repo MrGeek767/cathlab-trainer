@@ -32,7 +32,14 @@ export function MonitorToolbar(props: MonitorToolbarProps) {
   const fluoro = props.viewMode === 'fluoroscopy'
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Segmented label="Image" size="sm" options={IMAGES} value={props.viewMode} onChange={props.onViewMode} />
+      <Segmented
+        label="Image"
+        size="sm"
+        options={IMAGES}
+        value={props.viewMode}
+        onChange={props.onViewMode}
+        disabled={props.realFluoroLocked}
+      />
       {fluoro && (
         <Segmented
           label="Vessels"
@@ -43,13 +50,23 @@ export function MonitorToolbar(props: MonitorToolbarProps) {
           disabled={props.realFluoroLocked}
         />
       )}
-      {fluoro && props.realFluoroLocked && <span className="text-xs text-ink-faint">Exams use real fluoro</span>}
+      {fluoro && props.realFluoroLocked && (
+        <span title="Exams use real fluoro" className="inline-flex items-center text-ink-faint">
+          <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <rect x="3" y="7" width="10" height="7" rx="1.5" />
+            <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+          </svg>
+          <span className="sr-only">Exams use real fluoro</span>
+        </span>
+      )}
       <span className="flex-1" />
       <Toggle label="Labels" pressed={props.labels} onChange={props.onLabels} title="Name every segment on the image" />
       {fluoro && (
         <Toggle label="Invert" pressed={props.inverted} onChange={props.onInverted} title="Show contrast white on black" />
       )}
-      <Toggle label="Motion" pressed={props.heartbeat} onChange={props.onHeartbeat} title="Move the heart and coronaries with each beat" />
+      {fluoro && (
+        <Toggle label="Motion" pressed={props.heartbeat} onChange={props.onHeartbeat} title="Move the heart and coronaries with each beat" />
+      )}
     </div>
   )
 }

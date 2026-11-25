@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react'
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react'
 import { useAngleState } from '@/hooks/useAngleState'
 import { useDragRotation } from '@/hooks/useDragRotation'
 import { useArteryData } from '@/hooks/useArteryData'
@@ -14,6 +14,8 @@ import { ExplorePanel } from '@/components/layout/ExplorePanel'
 import { MODE_TABS, panelId } from '@/components/layout/ModeTabs'
 import { DISCLAIMER } from '@/data/credits'
 import { useCineRun } from '@/hooks/useCineRun'
+import { useInjectionLoop } from '@/hooks/useInjectionLoop'
+import { vesselOpacity } from '@/utils/monitor-state'
 import { buildVesselTree, sideOf, type InjectionSide } from '@/utils/contrast'
 import { prefersReducedMotion } from '@/utils/motion'
 import type { DominanceType, ViewMode, AppMode, CoronarySystem, PresetView } from '@/types/angles'
@@ -67,6 +69,20 @@ export default function App() {
   const vesselTree = useMemo(() => buildVesselTree(allSegments), [allSegments])
   const cine = useCineRun(vesselTree, injectionSide)
 
+  // Exams always use the real-fluoro image: no diagram, and arteries only with contrast.
+  const [examActive, setExamActive] = useState(false)
+  const examOn = appMode === 'challenges' && examActive
+  const imageMode: ViewMode = examOn ? 'fluoroscopy' : viewMode
+  const realFluoroOn = imageMode === 'fluoroscopy' && (realFluoro || examOn)
+  const monitorOpacity = vesselOpacity(realFluoroOn, cine.opacity)
+  // In real fluoro a highlighted target can only be seen with contrast, so its side is
+  // injected again and again while the question is on screen.
+  const loopInjections = realFluoroOn && appMode === 'challenges' && highlightSegmentId !== null
+  useEffect(() => {
+    if (loopInjections && highlightSide) setInjectionSide(highlightSide)
+  }, [loopInjections, highlightSide])
+  useInjectionLoop(loopInjections, cine.playing, cine.play)
+
   const tabLabel = MODE_TABS.find(tab => tab.mode === appMode)?.label ?? ''
 
   return (
@@ -95,11 +111,11 @@ export default function App() {
         {/* Centre: the live monitor, as large as the window allows */}
         <section aria-label="Angiogram" className="order-first flex min-w-0 flex-col gap-2 lg:order-none lg:min-h-0">
           <MonitorToolbar
-            viewMode={viewMode}
+            viewMode={imageMode}
             onViewMode={setViewMode}
-            realFluoro={realFluoro}
+            realFluoro={realFluoro || examOn}
             onRealFluoro={setRealFluoro}
-            realFluoroLocked={false}
+            realFluoroLocked={examOn}
             labels={showLabels}
             onLabels={setShowLabels}
             inverted={invertLut}
@@ -117,19 +133,21 @@ export default function App() {
                 anatomy={allSegments}
                 raoLao={angles.raoLao}
                 cranialCaudal={angles.cranialCaudal}
-                viewMode={viewMode}
+                viewMode={imageMode}
                 hoveredSegmentId={hoveredSegmentId}
                 onHoverSegment={setHoveredSegmentId}
                 onClickSegment={setSelectedSegmentId}
                 invertLut={invertLut}
                 showLabels={appMode === 'guided' || showLabels}
-                opacity={cine.opacity}
+                opacity={monitorOpacity}
                 highlightSegmentId={highlightSegmentId}
                 acquiring={cine.playing}
                 cineFrame={cine.frame}
                 heartbeat={heartbeat}
-                realFluoro={realFluoro}
+                realFluoro={realFluoroOn}
                 dominanceLabel={DOMINANCE_LABEL[dominance]}
+                injectHint={realFluoroOn && !cine.playing && !loopInjections}
+                catheterSide={injectionSide}
               />
             </div>
           </div>
@@ -186,6 +204,8 @@ export default function App() {
                 angles={angles}
                 animateTo={animateTo}
                 onHighlightChange={setHighlightSegmentId}
+                onExamChange={setExamActive}
+                realFluoro={realFluoroOn}
               />
             )}
           </div>

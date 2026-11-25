@@ -10,6 +10,8 @@ import { MonitorOverlay } from './MonitorOverlay'
 import { Landmarks3D } from './Landmarks3D'
 import { AorticRoot, HeartShadow, Ribs } from './BodyShadows'
 import { HeartMotion } from './HeartMotion'
+import { GuideCatheter } from './GuideCatheter'
+import type { InjectionSide } from '@/utils/contrast'
 import { heartFromAnatomy } from '@/utils/heart-motion'
 import { HEART_RATE } from '@/utils/cardiac-cycle'
 import { FluoroPipeline, NOISE } from './FluoroPipeline'
@@ -42,6 +44,9 @@ interface Scene2DProps {
   heartbeat?: boolean
   realFluoro?: boolean
   dominanceLabel?: string
+  injectHint?: boolean
+  /** Which coronary the guide catheter is seated in. */
+  catheterSide?: InjectionSide
 }
 
 /** The monitor's field of view stays the same whatever its size on screen. */
@@ -83,6 +88,8 @@ export function Scene2D({
   heartbeat = false,
   realFluoro = false,
   dominanceLabel = '',
+  injectHint = false,
+  catheterSide = 'left',
 }: Scene2DProps) {
   const isFluoro = viewMode === 'fluoroscopy'
   // The heart is fitted to the whole tree, so it does not change with the arteries filter.
@@ -110,6 +117,7 @@ export function Scene2D({
         )}
         <HeartMotion frame={heart.frame} beating={heartbeat && isFluoro} heartRate={heartRate}>
           {isFluoro && <HeartShadow ellipsoid={heart.ellipsoid} />}
+          {isFluoro && <GuideCatheter segments={anatomy} side={catheterSide} />}
           <ProjectedArteries
             segments={segments}
             viewMode={viewMode}
@@ -132,6 +140,7 @@ export function Scene2D({
         heartRate={heartRate}
         realFluoro={realFluoro}
         dominanceLabel={dominanceLabel}
+        injectHint={injectHint}
       />
     </div>
   )

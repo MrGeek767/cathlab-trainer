@@ -23,4 +23,10 @@ describe('vesselStyle', () => {
       expect(vesselStyle(mode, 'target', RED), mode).not.toEqual(vesselStyle(mode, 'dim', RED))
     }
   })
+
+  it('in fluoro the target is unmistakable: at least five times as dense as the dimmed vessels', () => {
+    const target = vesselStyle('fluoroscopy', 'target', RED).density
+    const dim = vesselStyle('fluoroscopy', 'dim', RED).density
+    expect(target / dim).toBeGreaterThanOrEqual(5)
+  })
 })
