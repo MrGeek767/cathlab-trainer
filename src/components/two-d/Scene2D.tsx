@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { ArterySegment } from '@/types/anatomy'
 import type { ViewMode } from '@/types/angles'
+import type { OpaqueRange } from '@/utils/contrast'
 import { anglesToPosition } from '@/utils/carm-math'
 import { ProjectedArteries } from './ProjectedArteries'
 import { MonitorOverlay } from './MonitorOverlay'
@@ -18,6 +19,8 @@ interface Scene2DProps {
   realism: boolean
   invertLut: boolean
   showLabels: boolean
+  /** Opaque part of each segment during a cine run; null shows the full road map. */
+  opacity?: Map<string, OpaqueRange> | null
 }
 
 function CameraController({
@@ -57,6 +60,7 @@ export function Scene2D({
   realism: _realism,
   invertLut,
   showLabels,
+  opacity = null,
 }: Scene2DProps) {
   const isFluoro = viewMode === 'fluoroscopy'
 
@@ -94,6 +98,7 @@ export function Scene2D({
           onHoverSegment={onHoverSegment}
           onClickSegment={onClickSegment}
           showLabels={showLabels}
+          opacity={opacity}
         />
       </Canvas>
 

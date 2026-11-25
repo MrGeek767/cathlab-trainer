@@ -1,9 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useLayoutEffect } from 'react'
 import * as THREE from 'three'
 import { Html } from '@react-three/drei'
 import type { ArterySegment } from '@/types/anatomy'
 import type { ViewMode } from '@/types/angles'
 import { buildArterySpline, buildTaperedTubeGeometry } from '@/utils/geometry'
+import { tubeDrawRange } from '@/utils/polyline'
+import type { OpaqueRange } from '@/utils/contrast'
+
+// buildTaperedTubeGeometry defaults: 64 rings × 8 sides
+const TUBULAR_SEGMENTS = 64
+const RADIAL_SEGMENTS = 8
 
 interface ProjectedArteriesProps {
   segments: ArterySegment[]
@@ -12,6 +18,8 @@ interface ProjectedArteriesProps {
   onHoverSegment: (id: string | null) => void
   onClickSegment: (id: string) => void
   showLabels?: boolean
+  /** Opaque part of each segment during a cine run; null shows the full road map. */
+  opacity?: Map<string, OpaqueRange> | null
 }
 
 function ProjectedArtery({
@@ -19,6 +27,7 @@ function ProjectedArtery({
   viewMode,
   isHovered,
   showLabels,
+  range,
   onPointerEnter,
   onPointerLeave,
   onClick,
@@ -27,6 +36,7 @@ function ProjectedArtery({
   viewMode: ViewMode
   isHovered: boolean
   showLabels?: boolean
+  range: OpaqueRange | null
   onPointerEnter: () => void
   onPointerLeave: () => void
   onClick: () => void
@@ -42,7 +52,13 @@ function ProjectedArtery({
     return { geometry: geo, midpoint: mid }
   }, [segment])
 
+  const drawRange = tubeDrawRange(range, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
+  useLayoutEffect(() => {
+    geometry.setDrawRange(drawRange.start, drawRange.count)
+  }, [geometry, drawRange.start, drawRange.count])
+
   const isFluoro = viewMode === 'fluoroscopy'
+  const visible = drawRange.count > 0
 
   return (
     <group>
@@ -69,7 +85,7 @@ function ProjectedArtery({
         )}
       </mesh>
 
-      {((viewMode === 'schematic') || isHovered || showLabels) && (
+      {visible && ((viewMode === 'schematic') || isHovered || showLabels) && (
         <Html
           position={[midpoint.x, midpoint.y + 0.12, midpoint.z]}
           center
@@ -97,6 +113,7 @@ export function ProjectedArteries({
   onHoverSegment,
   onClickSegment,
   showLabels,
+  opacity = null,
 }: ProjectedArteriesProps) {
   return (
     <group>
@@ -107,6 +124,7 @@ export function ProjectedArteries({
           viewMode={viewMode}
           isHovered={hoveredSegmentId === segment.id}
           showLabels={showLabels}
+          range={opacity ? opacity.get(segment.id) ?? { from: 0, to: 0 } : null}
           onPointerEnter={() => onHoverSegment(segment.id)}
           onPointerLeave={() => onHoverSegment(null)}
           onClick={() => onClickSegment(segment.id)}

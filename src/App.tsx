@@ -12,6 +12,9 @@ import { ViewModeToggle } from '@/components/controls/ViewModeToggle'
 import { PresetButtons } from '@/components/controls/PresetButtons'
 import { QualityPanel } from '@/components/quality/QualityPanel'
 import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
+import { CineControls } from '@/components/controls/CineControls'
+import { useCineRun } from '@/hooks/useCineRun'
+import { buildVesselTree, type InjectionSide } from '@/utils/contrast'
 
 const TeachingPanel = lazy(() => import('@/components/teaching/TeachingPanel').then(m => ({ default: m.TeachingPanel })))
 const QuizPanel = lazy(() => import('@/components/teaching/QuizPanel').then(m => ({ default: m.QuizPanel })))
@@ -29,7 +32,6 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('fluoroscopy')
   const [appMode, setAppMode] = useState<AppMode>('explore')
   const [invertLut, setInvertLut] = useState(true)
-  const [realism, setRealism] = useState(true)
   const [showLabels, setShowLabels] = useState(false)
   const [coronarySystem, setCoronarySystem] = useState<CoronarySystem>('both')
   const allSegments = useArteryData(dominance)
@@ -43,6 +45,9 @@ export default function App() {
     [allSegments, coronarySystem],
   )
   const { hoveredSegmentId, setHoveredSegmentId, selectedSegmentId, setSelectedSegmentId } = useHoveredSegment()
+  const [injectionSide, setInjectionSide] = useState<InjectionSide>('left')
+  const vesselTree = useMemo(() => buildVesselTree(allSegments), [allSegments])
+  const cine = useCineRun(vesselTree, injectionSide)
 
   const hasSidePanel = appMode !== 'explore'
 
@@ -134,9 +139,10 @@ export default function App() {
             hoveredSegmentId={hoveredSegmentId}
             onHoverSegment={setHoveredSegmentId}
             onClickSegment={setSelectedSegmentId}
-            realism={realism}
+            realism
             invertLut={invertLut}
             showLabels={appMode === 'guided' || showLabels}
+            opacity={cine.opacity}
           />
         </div>
 
@@ -205,14 +211,19 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              <CineControls
+                side={injectionSide}
+                onSideChange={setInjectionSide}
+                playing={cine.playing}
+                onPlay={cine.play}
+                onStop={cine.stop}
+              />
               <DominanceToggle value={dominance} onChange={setDominance} />
               <ViewModeToggle
                 value={viewMode}
                 onChange={setViewMode}
                 invertLut={invertLut}
                 onToggleInvert={() => setInvertLut(v => !v)}
-                realism={realism}
-                onToggleRealism={() => setRealism(v => !v)}
               />
             </div>
           </div>

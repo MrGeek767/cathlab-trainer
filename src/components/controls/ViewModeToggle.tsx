@@ -5,8 +5,6 @@ interface ViewModeToggleProps {
   onChange: (v: ViewMode) => void
   invertLut: boolean
   onToggleInvert: () => void
-  realism: boolean
-  onToggleRealism: () => void
 }
 
 export function ViewModeToggle({
@@ -14,8 +12,6 @@ export function ViewModeToggle({
   onChange,
   invertLut,
   onToggleInvert,
-  realism,
-  onToggleRealism,
 }: ViewModeToggleProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -56,17 +52,6 @@ export function ViewModeToggle({
               title="LUT Inversion (black/white swap)"
             >
               INV
-            </button>
-            <button
-              onClick={onToggleRealism}
-              className={`px-2 py-1 text-xs rounded-md transition-all ${
-                realism
-                  ? 'bg-cyan-700 text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-              title="Cine Realism (noise, scanlines, jitter)"
-            >
-              CINE
             </button>
           </div>
         )}
