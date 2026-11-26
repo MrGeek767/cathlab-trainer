@@ -4,18 +4,28 @@ interface UseDragRotationProps {
   adjustRaoLao: (delta: number) => void
   adjustCranialCaudal: (delta: number) => void
   sensitivity?: number
+  /** Off in the Cath lab, where dragging the monitor moves the device instead. Default true. */
+  enabled?: boolean
 }
 
 export function useDragRotation({
   adjustRaoLao,
   adjustCranialCaudal,
   sensitivity = 0.3,
+  enabled = true,
 }: UseDragRotationProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const enabledRef = useRef(enabled)
+  useEffect(() => {
+    enabledRef.current = enabled
+    const el = containerRef.current
+    if (el) el.style.cursor = enabled ? 'grab' : ''
+  }, [enabled])
   const dragging = useRef(false)
   const lastPos = useRef({ x: 0, y: 0 })
 
   const onPointerDown = useCallback((e: PointerEvent) => {
+    if (!enabledRef.current) return
     // Don't start drag if clicking on interactive overlay elements
     const target = e.target as HTMLElement
     if (target.closest('[data-no-drag]')) return
@@ -42,8 +52,8 @@ export function useDragRotation({
     dragging.current = false
     const el = containerRef.current
     if (el) {
-      el.releasePointerCapture(e.pointerId)
-      el.style.cursor = 'grab'
+      if (el.hasPointerCapture?.(e.pointerId)) el.releasePointerCapture(e.pointerId)
+      el.style.cursor = enabledRef.current ? 'grab' : ''
     }
   }, [])
 
@@ -51,7 +61,7 @@ export function useDragRotation({
     const el = containerRef.current
     if (!el) return
 
-    el.style.cursor = 'grab'
+    el.style.cursor = enabledRef.current ? 'grab' : ''
     el.style.touchAction = 'none'
     el.addEventListener('pointerdown', onPointerDown)
     el.addEventListener('pointermove', onPointerMove)

@@ -7,7 +7,9 @@ interface MonitorToolbarProps {
   onViewMode: (mode: ViewMode) => void
   realFluoro: boolean
   onRealFluoro: (real: boolean) => void
-  /** Exams fix real fluoro on. */
+  /** Why the image is fixed (an exam, the practice); null when free. */
+  imageLock: string | null
+  /** Exams also fix the vessels switch on Real fluoro. */
   realFluoroLocked: boolean
   labels: boolean
   onLabels: (on: boolean) => void
@@ -40,8 +42,10 @@ export function MonitorToolbar(props: MonitorToolbarProps) {
         options={IMAGES}
         value={props.viewMode}
         onChange={props.onViewMode}
-        disabled={props.realFluoroLocked}
+        disabled={props.imageLock !== null}
       />
+      {/* The lock sits after the last control it fixes: the image alone in the practice, both in an exam. */}
+      {props.imageLock && !props.realFluoroLocked && <LockNote reason={props.imageLock} />}
       {fluoro && (
         <Segmented
           label="Vessels"
@@ -52,15 +56,7 @@ export function MonitorToolbar(props: MonitorToolbarProps) {
           disabled={props.realFluoroLocked}
         />
       )}
-      {fluoro && props.realFluoroLocked && (
-        <span title="Exams use real fluoro" className="inline-flex items-center text-ink-faint">
-          <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <rect x="3" y="7" width="10" height="7" rx="1.5" />
-            <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
-          </svg>
-          <span className="sr-only">Exams use real fluoro</span>
-        </span>
-      )}
+      {props.imageLock && props.realFluoroLocked && <LockNote reason={props.imageLock} />}
       <span className="flex-1" />
       {/* The diagram always names its segments, so the switch belongs to fluoro. */}
       {fluoro && (
@@ -79,5 +75,18 @@ export function MonitorToolbar(props: MonitorToolbarProps) {
         <Toggle label="Motion" pressed={props.heartbeat} onChange={props.onHeartbeat} title="Move the heart and coronaries with each beat" />
       )}
     </div>
+  )
+}
+
+/** A padlock that says, on hover and to screen readers, why the controls before it are fixed. */
+function LockNote({ reason }: { reason: string }) {
+  return (
+    <span title={reason} className="inline-flex items-center text-ink-faint">
+      <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="3" y="7" width="10" height="7" rx="1.5" />
+        <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+      </svg>
+      <span className="sr-only">{reason}</span>
+    </span>
   )
 }

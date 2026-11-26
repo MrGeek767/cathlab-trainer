@@ -21,6 +21,8 @@ interface CarmPadProps {
   onInject: () => void
   onStop: () => void
   dominance: DominanceType
+  /** Why dominance is fixed right now (the practice patient). */
+  dominanceLock?: string
   onDominance: (value: DominanceType) => void
 }
 
@@ -71,7 +73,7 @@ export function CarmPad(props: CarmPadProps) {
         />
       </Section>
       <Section title="Dominance">
-        <DominanceToggle value={props.dominance} onChange={props.onDominance} />
+        <DominanceToggle value={props.dominance} onChange={props.onDominance} lock={props.dominanceLock} />
       </Section>
     </div>
   )

@@ -14,6 +14,7 @@ export const MODE_TABS: { mode: AppMode; label: string; icon: ReactNode }[] = [
   { mode: 'guided', label: 'Learn', icon: icon(<><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" /><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" /></>) },
   { mode: 'quiz', label: 'Quiz', icon: icon(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7" /><path d="M12 17h.01" /></>) },
   { mode: 'challenges', label: 'Challenges', icon: icon(<><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></>) },
+  { mode: 'cathlab', label: 'Cath lab', icon: icon(<><path d="M4 20c3-1 4-4 4-7V6a2 2 0 0 1 4 0v4" /><path d="M12 10c0 3 2 5 5 5h3" /><circle cx="20" cy="15" r="1.2" /><path d="M6.5 6h3" /></>) },
 ]
 
 export const panelId = (mode: AppMode) => `panel-${mode}`

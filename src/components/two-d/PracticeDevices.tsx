@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { addAxisAttribute, addRadiusProfileAttribute, buildProfiledTubeGeometry } from '@/utils/geometry'
 import type { Rail } from '@/practice/rail'
 import { balloonDiameterShown, markerPositions, shoulderProfile, type DeviceScene } from '@/practice/device-shapes'
-import { CONTRAST_ATTENUATION_PER_MM, VESSEL_BEHIND_LAYER, VESSEL_LAYER, lumenMaterial } from './density'
+import { CONTRAST_ATTENUATION_PER_MM, VESSEL_BEHIND_LAYER, deviceMaterial } from './density'
 
 /**
  * Attenuation of each device relative to contrast, per mm of path. Metal is far denser
@@ -32,7 +32,10 @@ class RailSpan extends THREE.Curve<THREE.Vector3> {
   }
 }
 
-/** A tube along the rail drawn with the contrast density model; never picked. */
+/**
+ * A tube along the rail drawn with the contrast density model, adding on top of the vessel
+ * and of other devices (see deviceMaterial). Only on the behind layer, so never picked.
+ */
 function RailTube({
   rail,
   fromMm,
@@ -59,24 +62,12 @@ function RailTube({
     addAxisAttribute(tube, rings, 8)
     return tube
   }, [rail, fromMm, toMm, radiusMm, shoulderMm])
-  const materials = useMemo(() => ({ front: lumenMaterial('front'), behind: lumenMaterial('behind') }), [])
-  materials.front.uniforms.uDensity!.value = CONTRAST_ATTENUATION_PER_MM * density
-  materials.behind.uniforms.uDensity!.value = CONTRAST_ATTENUATION_PER_MM * density
+  const material = useMemo(() => deviceMaterial(), [])
+  material.uniforms.uDensity!.value = CONTRAST_ATTENUATION_PER_MM * density
   useEffect(() => () => geometry?.dispose(), [geometry])
-  useEffect(
-    () => () => {
-      materials.front.dispose()
-      materials.behind.dispose()
-    },
-    [materials],
-  )
+  useEffect(() => () => material.dispose(), [material])
   if (!geometry) return null
-  return (
-    <>
-      <mesh geometry={geometry} material={materials.front} onUpdate={self => self.layers.set(VESSEL_LAYER)} />
-      <mesh geometry={geometry} material={materials.behind} onUpdate={self => self.layers.set(VESSEL_BEHIND_LAYER)} />
-    </>
-  )
+  return <mesh geometry={geometry} material={material} onUpdate={self => self.layers.set(VESSEL_BEHIND_LAYER)} />
 }
 
 /** The wire, the device in hand and a placed stent, as they look on fluoro (plan Task 9). */

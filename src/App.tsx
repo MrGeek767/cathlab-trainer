@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react'
+import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useAngleState } from '@/hooks/useAngleState'
 import { useDragRotation } from '@/hooks/useDragRotation'
 import { useArteryData } from '@/hooks/useArteryData'
@@ -15,6 +15,11 @@ import { MODE_TABS, panelId } from '@/components/layout/ModeTabs'
 import { AppFooter } from '@/components/layout/AppFooter'
 import { useCineRun } from '@/hooks/useCineRun'
 import { useInjectionLoop } from '@/hooks/useInjectionLoop'
+import { usePractice } from '@/hooks/usePractice'
+import { useDevicePush } from '@/hooks/useDevicePush'
+import { useWorkingView } from '@/hooks/useWorkingView'
+import { effectiveDominance } from '@/practice/app-rules'
+import { PracticePanel } from '@/components/practice/PracticePanel'
 import { injectionSideFor, labelsState, systemShown, vesselOpacity } from '@/utils/monitor-state'
 import { buildVesselTree, sideOf, type InjectionSide } from '@/utils/contrast'
 import { prefersReducedMotion } from '@/utils/motion'
@@ -34,7 +39,6 @@ const DOMINANCE_LABEL: Record<DominanceType, string> = {
 export default function App() {
   const { angles, setRaoLao, setCranialCaudal, adjustRaoLao, adjustCranialCaudal, animateTo } = useAngleState()
   const drag3D = useDragRotation({ adjustRaoLao, adjustCranialCaudal })
-  const drag2D = useDragRotation({ adjustRaoLao, adjustCranialCaudal })
 
   const handlePreset = (preset: PresetView) => {
     animateTo({ raoLao: preset.raoLao, cranialCaudal: preset.cranialCaudal })
@@ -47,7 +51,16 @@ export default function App() {
   const [realFluoro, setRealFluoro] = useState(false)
   const [heartbeat, setHeartbeat] = useState(() => !prefersReducedMotion())
   const [coronarySystem, setCoronarySystem] = useState<CoronarySystem>('both')
-  const allSegments = useArteryData(dominance)
+  // The Cath lab: its session lives here so it survives tab switches. Its patient is
+  // right dominant, it injects the left coronary, and it uses the fluoro image, where
+  // the devices are drawn.
+  const cathlab = appMode === 'cathlab'
+  const practice = usePractice()
+  const shownDominance = effectiveDominance(appMode, dominance)
+  const allSegments = useArteryData(shownDominance)
+  // In the Cath lab, dragging the monitor moves the device instead of the C-arm.
+  const drag2D = useDragRotation({ adjustRaoLao, adjustCranialCaudal, enabled: !cathlab })
+  useWorkingView(cathlab, animateTo)
   const [highlightSegmentId, setHighlightSegmentId] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
 
@@ -62,14 +75,33 @@ export default function App() {
   // Exams always use the real-fluoro image: no diagram, and arteries only with contrast.
   const [examActive, setExamActive] = useState(false)
   const examOn = appMode === 'challenges' && examActive
-  const imageMode: ViewMode = examOn ? 'fluoroscopy' : viewMode
+  const imageMode: ViewMode = examOn || cathlab ? 'fluoroscopy' : viewMode
+  const imageLock = examOn ? 'Exams use real fluoro' : cathlab ? 'The practice uses the fluoro image' : null
   const realFluoroOn = imageMode === 'fluoroscopy' && (realFluoro || examOn)
   // In real fluoro a highlighted target can only be seen with contrast, so its own side
   // is injected again and again while the question is on screen; the learner's pick of
   // side is locked meanwhile and comes back afterwards.
   const loopInjections = realFluoroOn && appMode === 'challenges' && highlightSegmentId !== null
-  const cineSide = injectionSideFor(loopInjections ? highlightSide : null, injectionSide)
+  const cineSide = injectionSideFor(cathlab ? 'left' : loopInjections ? highlightSide : null, injectionSide)
   const cine = useCineRun(vesselTree, cineSide)
+  const devicePush = useDevicePush({
+    enabled: cathlab,
+    onMove: deltaMm => practice.dispatch({ type: 'move', deltaMm }),
+    onInflate: () => practice.dispatch({ type: 'inflate' }),
+    onInject: cine.play,
+  })
+  const monitorRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      drag2D.containerRef.current = el
+      devicePush.containerRef.current = el
+    },
+    [drag2D.containerRef, devicePush.containerRef],
+  )
+  // The final shot is a left coronary run; the panel then grades the result.
+  const finalShot = () => {
+    cine.play()
+    practice.dispatch({ type: 'final-shot' })
+  }
   const monitorOpacity = vesselOpacity(realFluoroOn, cine.opacity)
   useInjectionLoop(loopInjections, cine.playing, cine.play)
   // Names on the monitor; the Labels switch shows exactly what the monitor does. While a
@@ -82,13 +114,16 @@ export default function App() {
     chosen: showLabels,
   })
   const quizLock = highlightSegmentId !== null || examOn
+  // In the Cath lab the pointer works the device, so the monitor neither highlights nor picks segments.
+  const monitorPickLock = quizLock || cathlab
   // The arteries filter belongs to Explore, and steps aside during a run; the other tabs
   // always show both coronaries.
   const systemFilter = systemShown(appMode === 'explore', coronarySystem, cine.playing)
   const segments = useMemo(() => {
-    const side = highlightSide ?? (systemFilter === 'both' ? null : systemFilter)
+    // The practice guide sits in the left main, so only the left coronary is shown.
+    const side = highlightSide ?? (cathlab ? 'left' : systemFilter === 'both' ? null : systemFilter)
     return side ? allSegments.filter(s => sideOf(s) === side) : allSegments
-  }, [allSegments, systemFilter, highlightSide])
+  }, [allSegments, systemFilter, highlightSide, cathlab])
 
   const tabLabel = MODE_TABS.find(tab => tab.mode === appMode)?.label ?? ''
 
@@ -107,12 +142,15 @@ export default function App() {
             showViewHints={appMode !== 'challenges'}
             injectionSide={cineSide}
             onInjectionSide={setInjectionSide}
-            injectionSideLock={loopInjections ? 'This question injects its own coronary' : undefined}
+            injectionSideLock={
+              cathlab ? 'The practice injects the left coronary' : loopInjections ? 'This question injects its own coronary' : undefined
+            }
             playing={cine.playing}
             onInject={cine.play}
             onStop={cine.stop}
-            dominance={dominance}
+            dominance={shownDominance}
             onDominance={setDominance}
+            dominanceLock={cathlab ? 'The practice patient is right dominant' : undefined}
           />
         </aside>
 
@@ -123,6 +161,7 @@ export default function App() {
             onViewMode={setViewMode}
             realFluoro={realFluoro || examOn}
             onRealFluoro={setRealFluoro}
+            imageLock={imageLock}
             realFluoroLocked={examOn}
             labels={labels.on}
             onLabels={setShowLabels}
@@ -134,18 +173,28 @@ export default function App() {
           />
           <div className="flex h-[min(94vw,72vh)] items-center justify-center [container-type:size] lg:h-auto lg:min-h-0 lg:flex-1">
             <div
-              ref={drag2D.containerRef}
+              ref={monitorRef}
+              tabIndex={cathlab ? 0 : undefined}
+              role={cathlab ? 'group' : undefined}
+              aria-label={cathlab ? 'Monitor' : undefined}
+              aria-describedby={cathlab ? 'monitor-keys' : undefined}
               className="relative h-[min(100cqw,100cqh)] w-[min(100cqw,100cqh)] cursor-grab overflow-hidden rounded-2xl bg-black shadow-[0_0_0_6px_#060D16,0_0_0_7px_#24405F] active:cursor-grabbing"
             >
+              {cathlab && (
+                <p id="monitor-keys" className="sr-only">
+                  Drag right or up to push the device in, left or down to pull it back. The up and down arrow keys move it 1 mm, I inflates and
+                  space injects contrast.
+                </p>
+              )}
               <Scene2D
                 segments={segments}
                 anatomy={allSegments}
                 raoLao={angles.raoLao}
                 cranialCaudal={angles.cranialCaudal}
                 viewMode={imageMode}
-                hoveredSegmentId={quizLock ? null : hoveredSegmentId}
-                onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}
-                onClickSegment={quizLock ? IGNORE : setSelectedSegmentId}
+                hoveredSegmentId={monitorPickLock ? null : hoveredSegmentId}
+                onHoverSegment={monitorPickLock ? IGNORE : setHoveredSegmentId}
+                onClickSegment={monitorPickLock ? IGNORE : setSelectedSegmentId}
                 invertLut={invertLut}
                 showLabels={labels.on}
                 namesHidden={quizLock}
@@ -155,9 +204,11 @@ export default function App() {
                 cineFrame={cine.frame}
                 heartbeat={heartbeat}
                 realFluoro={realFluoroOn}
-                dominanceLabel={DOMINANCE_LABEL[dominance]}
+                dominanceLabel={DOMINANCE_LABEL[shownDominance]}
                 injectHint={realFluoroOn && !cine.playing && !loopInjections}
                 catheterSide={cineSide}
+                lumens={cathlab ? practice.lumens : undefined}
+                devices={cathlab ? practice.devices : null}
               />
             </div>
           </div>
@@ -218,6 +269,7 @@ export default function App() {
                 realFluoro={realFluoroOn}
               />
             )}
+            {cathlab && <PracticePanel state={practice.state} onAction={practice.dispatch} onFinalShot={finalShot} />}
           </div>
         </aside>
       </main>

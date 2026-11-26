@@ -7,7 +7,7 @@ export interface AngleState {
 
 export type DominanceType = 'right' | 'left' | 'codominant'
 export type ViewMode = 'fluoroscopy' | 'schematic'
-export type AppMode = 'explore' | 'guided' | 'quiz' | 'challenges'
+export type AppMode = 'explore' | 'guided' | 'quiz' | 'challenges' | 'cathlab'
 export type CoronarySystem = 'both' | 'left' | 'right'
 
 export interface PresetView {

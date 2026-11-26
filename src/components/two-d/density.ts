@@ -192,6 +192,32 @@ export function lumenMaterial(pass: 'front' | 'behind', { heartWeighted = false 
 }
 
 /**
+ * The material for devices on the wire (wire, markers, balloon, stent). Attenuation adds
+ * along the beam, so a device adds on top of the contrast around it and of any device it
+ * sits in: drawn in the behind pass with no depth test, never in the front pass, whose
+ * depth test would hide a wire inside its vessel or inside the balloon's shaft. Its
+ * `uDensity` is the attenuation per millimetre of path, like the lumen's.
+ */
+export function deviceMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    defines: { USE_LUMEN: '', MIN_SIN_AXIS: MIN_SIN_AXIS.toFixed(3) },
+    vertexShader: VERTEX,
+    fragmentShader: FRAGMENT,
+    uniforms: {
+      uDensity: { value: 0 },
+      uHorizontal: { value: 0 },
+      uDiscs: { value: 0 },
+      uHeart: { value: new THREE.Matrix4() },
+    },
+    depthTest: false,
+    depthWrite: false,
+    side: THREE.FrontSide,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+  })
+}
+
+/**
  * The data type for the density buffers. Half floats hold densities above 1 without
  * clipping; a graphics card that cannot draw into them gets 8-bit buffers instead, where
  * the densest vessels clip but the image still shows, rather than a blank monitor.

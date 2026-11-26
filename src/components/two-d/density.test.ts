@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import { MM_TO_SCENE } from '@/utils/geometry'
-import { densityTargetType, lumenChordMm, lumenMaterial, CROSSING_DEPTH_MM } from './density'
+import { densityTargetType, deviceMaterial, lumenChordMm, lumenMaterial, CROSSING_DEPTH_MM } from './density'
 
 describe('lumenChordMm: X-ray path through a contrast-filled vessel', () => {
   it('is the full diameter through the middle of a vessel that lies across the beam', () => {
@@ -40,6 +40,19 @@ describe('lumenMaterial: two passes for contrast-filled vessels', () => {
     expect(behind.depthWrite).toBe(false)
     expect(behind.blending).toBe(THREE.AdditiveBlending)
     expect(Number(behind.defines.BEHIND_OFFSET)).toBeCloseTo(CROSSING_DEPTH_MM * MM_TO_SCENE, 4)
+  })
+})
+
+describe('deviceMaterial: the wire, markers, balloon and stent', () => {
+  it('adds on top of the contrast and of each other, as metal inside a filled vessel does', () => {
+    // A depth-tested pass would hide a wire inside its vessel, or inside the balloon's shaft.
+    const device = deviceMaterial()
+    expect(device.depthTest).toBe(false)
+    expect(device.depthWrite).toBe(false)
+    expect(device.blending).toBe(THREE.AdditiveBlending)
+    expect(device.side).toBe(THREE.FrontSide)
+    expect(device.defines.USE_LUMEN).toBeDefined()
+    expect(device.defines.BEHIND_OFFSET).toBeUndefined()
   })
 })
 
