@@ -34,6 +34,8 @@ interface Scene2DProps {
   showLabels: boolean
   /** No names at all, hover included (a question or an exam is on screen). */
   namesHidden?: boolean
+  /** Lumen radius (mm) by distance along the drawn segment, for a segment with a lesion. */
+  lumens?: ReadonlyMap<string, (mm: number) => number>
   /** Opaque part of each segment during a cine run; null shows the full road map. */
   opacity?: Map<string, OpaqueRange> | null
   /** Challenge target, drawn highlighted with labels and hover off. */
@@ -83,6 +85,7 @@ export function Scene2D({
   invertLut,
   showLabels,
   namesHidden = false,
+  lumens,
   opacity = null,
   highlightSegmentId = null,
   acquiring = false,
@@ -140,6 +143,7 @@ export function Scene2D({
             onClickSegment={onClickSegment}
             showLabels={showLabels}
             namesHidden={namesHidden}
+            lumens={lumens}
             opacity={opacity}
             highlightSegmentId={highlightSegmentId}
           />

@@ -6,9 +6,9 @@ import type { ViewMode } from '@/types/angles'
 import {
   MM_TO_SCENE,
   addAxisAttribute,
-  addRadiusAttribute,
+  addRadiusProfileAttribute,
   buildArterySpline,
-  buildTaperedTubeGeometry,
+  buildProfiledTubeGeometry,
   extendCurveEnds,
 } from '@/utils/geometry'
 import { tubeDrawRange } from '@/utils/polyline'
@@ -32,6 +32,8 @@ interface ProjectedArteriesProps {
   showLabels?: boolean
   /** No names and no hover (a question or an exam is on screen). */
   namesHidden?: boolean
+  /** Lumen radius (mm) by distance along the drawn segment, for segments with a lesion. */
+  lumens?: ReadonlyMap<string, (mm: number) => number>
   /** Opaque part of each segment during a cine run; null shows the full road map. */
   opacity?: Map<string, OpaqueRange> | null
   /**
@@ -44,6 +46,7 @@ interface ProjectedArteriesProps {
 function ProjectedArtery({
   segment,
   path,
+  lumen,
   viewMode,
   isHovered,
   tone,
@@ -57,6 +60,8 @@ function ProjectedArtery({
   segment: ArterySegment
   /** The drawn centre line (buildVesselPaths); the segment's own spline if absent. */
   path: THREE.Curve<THREE.Vector3> | null
+  /** Lumen radius (mm) by distance along the drawn segment, for a narrowed segment. */
+  lumen?: (mm: number) => number
   viewMode: ViewMode
   isHovered: boolean
   tone: VesselTone
@@ -74,19 +79,23 @@ function ProjectedArtery({
     const curve = path ?? buildArterySpline(segment.controlPoints)
     // Each tube runs on a little past its ends so neighbouring segments overlap: no seam.
     const overlap = (radiusMm: number) => radiusMm * widthFactor * MM_TO_SCENE * JOINT_OVERLAP
-    const geo = buildTaperedTubeGeometry(
-      extendCurveEnds(curve, overlap(segment.startRadius), overlap(segment.endRadius)),
-      segment.startRadius * widthFactor,
-      segment.endRadius * widthFactor,
-      TUBULAR_SEGMENTS,
-      RADIAL_SEGMENTS,
-    )
+    const startExtension = overlap(segment.startRadius)
+    const extended = extendCurveEnds(curve, startExtension, overlap(segment.endRadius))
+    // The lumen radius (mm) at each ring: tapering, or the practice lesion's own profile.
+    // Rings are spaced along the extended curve, so measure back to the segment itself.
+    const segmentMm = curve.getLength() / MM_TO_SCENE
+    const extendedLength = extended.getLength()
+    const radiusAt = (t: number) => {
+      const mm = Math.min(Math.max((t * extendedLength - startExtension) / MM_TO_SCENE, 0), segmentMm)
+      return lumen ? lumen(mm) : segment.startRadius + (segment.endRadius - segment.startRadius) * (mm / segmentMm)
+    }
+    const geo = buildProfiledTubeGeometry(extended, t => radiusAt(t) * widthFactor, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
     // The real lumen and course at every vertex, for the contrast density.
-    addRadiusAttribute(geo, segment.startRadius, segment.endRadius, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
+    addRadiusProfileAttribute(geo, radiusAt, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
     addAxisAttribute(geo, TUBULAR_SEGMENTS, RADIAL_SEGMENTS)
     const mid = curve.getPoint(0.5)
     return { geometry: geo, midpoint: mid }
-  }, [segment, path, widthFactor])
+  }, [segment, path, widthFactor, lumen])
   useEffect(() => () => geometry.dispose(), [geometry])
 
   const contrast = useMemo(() => ({ front: lumenMaterial('front'), behind: lumenMaterial('behind') }), [])
@@ -179,6 +188,7 @@ export function ProjectedArteries({
   onClickSegment,
   showLabels,
   namesHidden = false,
+  lumens,
   opacity = null,
   highlightSegmentId = null,
 }: ProjectedArteriesProps) {
@@ -199,6 +209,7 @@ export function ProjectedArteries({
             key={segment.id}
             segment={segment}
             path={paths.get(segment.id) ?? null}
+            lumen={lumens?.get(segment.id)}
             viewMode={viewMode}
             isHovered={isHovered}
             tone={tone}

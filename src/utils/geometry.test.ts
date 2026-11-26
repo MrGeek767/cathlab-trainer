@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { buildTaperedTubeGeometry, addRadiusAttribute, addAxisAttribute, extendCurveEnds, MM_TO_SCENE } from './geometry'
+import {
+  buildTaperedTubeGeometry,
+  buildProfiledTubeGeometry,
+  addRadiusAttribute,
+  addRadiusProfileAttribute,
+  addAxisAttribute,
+  extendCurveEnds,
+  MM_TO_SCENE,
+} from './geometry'
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z)
 
@@ -87,6 +95,25 @@ describe('addAxisAttribute', () => {
         expect(got.angleTo(expected), `ring ${i}, side ${j}`).toBeLessThan(0.02)
       }
     }
+  })
+})
+
+describe('buildProfiledTubeGeometry: a tube whose radius follows a profile', () => {
+  it('shapes each ring to the profile, and records it per vertex', () => {
+    const curve = new THREE.CatmullRomCurve3([v(0, 0, 0), v(0, 1, 0), v(0, 2, 0)])
+    const profile = (t: number) => (t > 0.4 && t < 0.6 ? 0.5 : 2)
+    const tube = buildProfiledTubeGeometry(curve, profile, 20, 6)
+    const position = tube.attributes.position!
+    const ringRadius = (ring: number) => {
+      const index = ring * 7
+      const centre = curve.getPointAt(ring / 20)
+      return v(position.getX(index), position.getY(index), position.getZ(index)).distanceTo(centre)
+    }
+    expect(ringRadius(10)).toBeCloseTo(0.5 * MM_TO_SCENE, 6)
+    expect(ringRadius(0)).toBeCloseTo(2 * MM_TO_SCENE, 6)
+    addRadiusProfileAttribute(tube, profile, 20, 6)
+    expect(tube.attributes.aRadius!.getX(10 * 7)).toBeCloseTo(0.5, 6)
+    expect(tube.attributes.aRadius!.getX(0)).toBeCloseTo(2, 6)
   })
 })
 

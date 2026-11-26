@@ -150,55 +150,39 @@ export function buildTaperedTubeGeometry(
   tubularSegments = 64,
   radialSegments = 8,
 ): THREE.TubeGeometry {
-  // Use the average radius to create the initial geometry
-  const avgRadius = ((startRadius + endRadius) / 2) * MM_TO_SCENE
-  const geometry = new THREE.TubeGeometry(curve, tubularSegments, avgRadius, radialSegments, false)
+  return buildProfiledTubeGeometry(curve, t => startRadius + (endRadius - startRadius) * t, tubularSegments, radialSegments)
+}
 
-  // Now apply tapering by adjusting radial vertex positions
+/**
+ * A tube along `curve` whose radius (mm) at each ring follows `radiusAt(t)`, t being the
+ * fraction of the curve's length. Rings sit where TubeGeometry puts them, by arc length.
+ */
+export function buildProfiledTubeGeometry(
+  curve: THREE.Curve<THREE.Vector3>,
+  radiusAt: (t: number) => number,
+  tubularSegments = 64,
+  radialSegments = 8,
+): THREE.TubeGeometry {
+  const baseRadius = MM_TO_SCENE
+  const geometry = new THREE.TubeGeometry(curve, tubularSegments, baseRadius, radialSegments, false)
   const positions = geometry.attributes.position!
-  const normals = geometry.attributes.normal!
-
+  const center = new THREE.Vector3()
   for (let i = 0; i <= tubularSegments; i++) {
     const t = i / tubularSegments
-    const targetRadius = (startRadius + (endRadius - startRadius) * t) * MM_TO_SCENE
-    const scaleRatio = targetRadius / avgRadius
-
+    const scale = (radiusAt(t) * MM_TO_SCENE) / baseRadius
+    curve.getPointAt(t, center)
     for (let j = 0; j <= radialSegments; j++) {
       const idx = i * (radialSegments + 1) + j
-      const px = positions.getX(idx)
-      const py = positions.getY(idx)
-      const pz = positions.getZ(idx)
-
-      // The ring's centre: TubeGeometry places rings by arc length, so measure the same way.
-      const center = curve.getPointAt(t)
-
-      // Scale the radial offset
-      const dx = px - center.x
-      const dy = py - center.y
-      const dz = pz - center.z
-
       positions.setXYZ(
         idx,
-        center.x + dx * scaleRatio,
-        center.y + dy * scaleRatio,
-        center.z + dz * scaleRatio,
+        center.x + (positions.getX(idx) - center.x) * scale,
+        center.y + (positions.getY(idx) - center.y) * scale,
+        center.z + (positions.getZ(idx) - center.z) * scale,
       )
-
-      // Scale normals similarly (they're already unit-ish, just re-normalize)
-      const nx = normals.getX(idx)
-      const ny = normals.getY(idx)
-      const nz = normals.getZ(idx)
-      const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
-      if (len > 0) {
-        normals.setXYZ(idx, nx / len, ny / len, nz / len)
-      }
     }
   }
-
   positions.needsUpdate = true
-  normals.needsUpdate = true
   geometry.computeBoundingSphere()
-
   return geometry
 }
 
@@ -213,10 +197,20 @@ export function addRadiusAttribute(
   tubularSegments = 64,
   radialSegments = 8,
 ): void {
+  addRadiusProfileAttribute(geometry, t => startRadiusMm + (endRadiusMm - startRadiusMm) * t, tubularSegments, radialSegments)
+}
+
+/** Store the lumen radius (mm) at each ring as `aRadius`, following `radiusAt(t)`. */
+export function addRadiusProfileAttribute(
+  geometry: THREE.BufferGeometry,
+  radiusAt: (t: number) => number,
+  tubularSegments = 64,
+  radialSegments = 8,
+): void {
   const count = geometry.attributes.position!.count
   const radii = new Float32Array(count)
   for (let i = 0; i <= tubularSegments; i++) {
-    const r = startRadiusMm + (endRadiusMm - startRadiusMm) * (i / tubularSegments)
+    const r = radiusAt(i / tubularSegments)
     for (let j = 0; j <= radialSegments; j++) {
       const index = i * (radialSegments + 1) + j
       if (index < count) radii[index] = r
