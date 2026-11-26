@@ -5,6 +5,7 @@ import { VIEW_PRESETS } from '@/data/presets'
 import { segmentLabel, type NameSegmentQuestion } from '@/challenges/name-segment'
 import { formatView } from '@/utils/format-view'
 import { ANSWER_BADGE } from '@/components/ui/rating'
+import { scrollBehavior } from '@/utils/motion'
 
 interface NameSegmentPanelProps {
   question: NameSegmentQuestion
@@ -56,7 +57,7 @@ export function NameSegmentPanel({
 
   // The panel is short on desktop, so bring the verdict into view once answered.
   useEffect(() => {
-    if (choice !== null) feedbackRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    if (choice !== null) feedbackRef.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() })
   }, [choice])
 
   useEffect(() => {

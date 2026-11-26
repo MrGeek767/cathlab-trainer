@@ -21,8 +21,17 @@ const VERTEX = /* glsl */ `
   varying float vRadius;
   varying float vSinAxis;
   #endif
+  #ifdef USE_HEART_WEIGHT
+  // The heart's pose this frame, taken in part by each vertex (aHeartWeight 0..1).
+  uniform mat4 uHeart;
+  attribute float aHeartWeight;
+  #endif
   void main() {
-    vec4 world = modelMatrix * vec4(position, 1.0);
+    vec3 local = position;
+    #ifdef USE_HEART_WEIGHT
+    local = mix(position, (uHeart * vec4(position, 1.0)).xyz, aHeartWeight);
+    #endif
+    vec4 world = modelMatrix * vec4(local, 1.0);
     vWorldY = world.y;
     if (uHorizontal > 0.5) {
       vec3 n = mat3(modelMatrix) * normal;
@@ -155,13 +164,15 @@ export const CONTRAST_ATTENUATION_PER_MM = 0.3
  * The material for contrast-filled vessels. Its `uDensity` uniform is the attenuation
  * per millimetre of lumen; the radius and direction come per vertex (`aRadius`, `aAxis`).
  */
-export function lumenMaterial(pass: 'front' | 'behind'): THREE.ShaderMaterial {
+export function lumenMaterial(pass: 'front' | 'behind', { heartWeighted = false } = {}): THREE.ShaderMaterial {
   const behind = pass === 'behind'
   return new THREE.ShaderMaterial({
     defines: {
       USE_LUMEN: '',
       MIN_SIN_AXIS: MIN_SIN_AXIS.toFixed(3),
       ...(behind ? { BEHIND_OFFSET: (CROSSING_DEPTH_MM * MM_TO_SCENE).toFixed(4) } : {}),
+      // For the guide catheter: each vertex follows the heart by its aHeartWeight.
+      ...(heartWeighted ? { USE_HEART_WEIGHT: '' } : {}),
     },
     vertexShader: VERTEX,
     fragmentShader: FRAGMENT,
@@ -169,6 +180,7 @@ export function lumenMaterial(pass: 'front' | 'behind'): THREE.ShaderMaterial {
       uDensity: { value: 0 },
       uHorizontal: { value: 0 },
       uDiscs: { value: 0 },
+      uHeart: { value: new THREE.Matrix4() },
     },
     depthTest: true,
     depthWrite: !behind,
@@ -177,4 +189,15 @@ export function lumenMaterial(pass: 'front' | 'behind'): THREE.ShaderMaterial {
     transparent: behind,
     blending: behind ? THREE.AdditiveBlending : THREE.NoBlending,
   })
+}
+
+/**
+ * The data type for the density buffers. Half floats hold densities above 1 without
+ * clipping; a graphics card that cannot draw into them gets 8-bit buffers instead, where
+ * the densest vessels clip but the image still shows, rather than a blank monitor.
+ */
+export function densityTargetType(hasExtension: (name: string) => boolean): THREE.TextureDataType {
+  return hasExtension('EXT_color_buffer_half_float') || hasExtension('EXT_color_buffer_float')
+    ? THREE.HalfFloatType
+    : THREE.UnsignedByteType
 }

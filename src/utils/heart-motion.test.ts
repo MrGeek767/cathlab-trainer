@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import { RIGHT_DOMINANT_SEGMENTS } from '@/data/arteries'
 import { ANATOMY_SCALE } from './geometry'
-import { heartFromAnatomy, heartMotionMatrix, HEART_MOTION } from './heart-motion'
+import { heartFromAnatomy, heartMatrixAt, heartMotionMatrix, HEART_MOTION } from './heart-motion'
+import { cineFrameTime, contractionAt } from './cardiac-cycle'
 
 const heart = heartFromAnatomy(RIGHT_DOMINANT_SEGMENTS)
 const { pivot, apex } = heart.frame
@@ -41,3 +42,22 @@ describe('heartMotionMatrix: the heart squeezing in systole', () => {
     expect(THREE.MathUtils.radToDeg(after.angleTo(side))).toBeCloseTo(HEART_MOTION.twistDeg, 4)
   })
 })
+
+describe('heartMatrixAt: the heart\'s pose at a moment, for everything that rides on it', () => {
+  it('is the relaxed pose when the heart is not beating', () => {
+    expect(heartMatrixAt(heart.frame, 300, { beating: false, heartRate: 70, stepped: true }).equals(new THREE.Matrix4())).toBe(true)
+  })
+
+  it('on the monitor, holds each pose for a whole 1/15 s frame', () => {
+    const at = (t: number) => heartMatrixAt(heart.frame, t, { beating: true, heartRate: 70, stepped: true })
+    expect(at(140).equals(at(180))).toBe(true) // the same cine frame
+    const expected = heartMotionMatrix(heart.frame, contractionAt(cineFrameTime(140), 70))
+    expect(at(140).equals(expected)).toBe(true)
+  })
+
+  it('in 3D, moves continuously', () => {
+    const at = (t: number) => heartMatrixAt(heart.frame, t, { beating: true, heartRate: 70, stepped: false })
+    expect(at(140).equals(at(180))).toBe(false)
+  })
+})
+

@@ -6,3 +6,8 @@ export function prefersReducedMotion(): boolean {
     return false
   }
 }
+
+/** How to scroll something into view: a glide, or a plain jump under reduced motion. */
+export function scrollBehavior(): ScrollBehavior {
+  return prefersReducedMotion() ? 'auto' : 'smooth'
+}

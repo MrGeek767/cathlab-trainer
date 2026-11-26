@@ -4,6 +4,7 @@ import { scoreShowMe, showMeVerdict, type ShowMeItem, type ShowMeResult } from '
 import { OptimalViewMap } from '@/components/quality/OptimalViewMap'
 import { formatView } from '@/utils/format-view'
 import { RATING_BADGE } from '@/components/ui/rating'
+import { scrollBehavior } from '@/utils/motion'
 
 interface ShowMePanelProps {
   item: ShowMeItem
@@ -43,7 +44,7 @@ export function ShowMePanel({
 
   // The panel is short on desktop, so bring the feedback into view once the shot is taken.
   useEffect(() => {
-    if (current && revealFeedback) feedbackRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    if (current && revealFeedback) feedbackRef.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() })
   }, [current, revealFeedback])
 
   const takeShot = () => {

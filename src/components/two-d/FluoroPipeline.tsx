@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BODY_LAYER, VESSEL_BEHIND_LAYER, VESSEL_LAYER } from './density'
+import { BODY_LAYER, VESSEL_BEHIND_LAYER, VESSEL_LAYER, densityTargetType } from './density'
 
 /**
  * Turns the scene's X-ray densities into a fluoroscopy image. The scene renders into a
@@ -81,9 +81,10 @@ export function FluoroPipeline({ invert, noise, frameRate = 15 }: FluoroPipeline
   const { gl, size } = useThree()
 
   const targets = useMemo(() => {
+    const type = densityTargetType(name => gl.extensions.has(name))
     const make = (depthBuffer: boolean) =>
       new THREE.WebGLRenderTarget(1, 1, {
-        type: THREE.HalfFloatType,
+        type,
         format: THREE.RGBAFormat,
         depthBuffer,
         minFilter: THREE.LinearFilter,
@@ -91,7 +92,7 @@ export function FluoroPipeline({ invert, noise, frameRate = 15 }: FluoroPipeline
       })
     // The vessel buffer keeps depth: the front pass's nearest vessel decides crossings.
     return { body: make(false), vessels: make(true) }
-  }, [])
+  }, [gl])
   useEffect(
     () => () => {
       targets.body.dispose()

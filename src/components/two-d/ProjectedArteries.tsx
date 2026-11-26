@@ -30,6 +30,8 @@ interface ProjectedArteriesProps {
   onHoverSegment: (id: string | null) => void
   onClickSegment: (id: string) => void
   showLabels?: boolean
+  /** No names and no hover (a question or an exam is on screen). */
+  namesHidden?: boolean
   /** Opaque part of each segment during a cine run; null shows the full road map. */
   opacity?: Map<string, OpaqueRange> | null
   /**
@@ -176,16 +178,19 @@ export function ProjectedArteries({
   onHoverSegment,
   onClickSegment,
   showLabels,
+  namesHidden = false,
   opacity = null,
   highlightSegmentId = null,
 }: ProjectedArteriesProps) {
   const highlighting = highlightSegmentId !== null
+  // No names and no hover while a question or an exam is on screen.
+  const locked = highlighting || namesHidden
   // Smooth centre lines: each artery bends through its segment joints without a kink.
   const paths = useMemo(() => buildVesselPaths(segments), [segments])
   return (
     <group>
       {segments.map(segment => {
-        const isHovered = !highlighting && hoveredSegmentId === segment.id
+        const isHovered = !locked && hoveredSegmentId === segment.id
         const tone: VesselTone = highlighting
           ? segment.id === highlightSegmentId ? 'target' : 'dim'
           : isHovered ? 'hover' : 'normal'
@@ -197,12 +202,12 @@ export function ProjectedArteries({
             viewMode={viewMode}
             isHovered={isHovered}
             tone={tone}
-            labelsAllowed={!highlighting}
+            labelsAllowed={!locked}
             showLabels={showLabels}
             range={opacity ? opacity.get(segment.id) ?? { from: 0, to: 0 } : null}
-            onPointerEnter={highlighting ? undefined : () => onHoverSegment(segment.id)}
-            onPointerLeave={highlighting ? undefined : () => onHoverSegment(null)}
-            onClick={highlighting ? undefined : () => onClickSegment(segment.id)}
+            onPointerEnter={locked ? undefined : () => onHoverSegment(segment.id)}
+            onPointerLeave={locked ? undefined : () => onHoverSegment(null)}
+            onClick={locked ? undefined : () => onClickSegment(segment.id)}
           />
         )
       })}

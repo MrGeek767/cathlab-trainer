@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import { MM_TO_SCENE } from '@/utils/geometry'
-import { lumenChordMm, lumenMaterial, CROSSING_DEPTH_MM } from './density'
+import { densityTargetType, lumenChordMm, lumenMaterial, CROSSING_DEPTH_MM } from './density'
 
 describe('lumenChordMm: X-ray path through a contrast-filled vessel', () => {
   it('is the full diameter through the middle of a vessel that lies across the beam', () => {
@@ -42,3 +42,15 @@ describe('lumenMaterial: two passes for contrast-filled vessels', () => {
     expect(Number(behind.defines.BEHIND_OFFSET)).toBeCloseTo(CROSSING_DEPTH_MM * MM_TO_SCENE, 4)
   })
 })
+
+describe('densityTargetType: the buffers density is drawn into', () => {
+  it('uses half floats where the graphics card can draw into them', () => {
+    expect(densityTargetType(name => name === 'EXT_color_buffer_float')).toBe(THREE.HalfFloatType)
+    expect(densityTargetType(name => name === 'EXT_color_buffer_half_float')).toBe(THREE.HalfFloatType)
+  })
+
+  it('falls back to 8-bit buffers rather than leave the monitor blank', () => {
+    expect(densityTargetType(() => false)).toBe(THREE.UnsignedByteType)
+  })
+})
+

@@ -47,12 +47,14 @@ export function ModeTabs({ value, onChange }: { value: AppMode; onChange: (mode:
             tabIndex={selected ? 0 : -1}
             data-active={selected}
             onClick={() => onChange(tab.mode)}
-            className={`flex items-center gap-2 px-4 text-base font-medium transition-colors duration-150 ${
+            title={tab.label}
+            className={`flex items-center gap-2 px-3 text-base font-medium transition-colors duration-150 md:px-4 ${
               selected ? 'text-ink' : 'text-ink-faint hover:text-ink-soft'
             }`}
           >
             <span className={`transition-colors duration-150 ${selected ? 'text-drape' : ''}`}>{tab.icon}</span>
-            <span>{tab.label}</span>
+            {/* Phones get icons only; the name stays for screen readers and as a tooltip. */}
+            <span className="sr-only md:not-sr-only">{tab.label}</span>
           </button>
         )
       })}

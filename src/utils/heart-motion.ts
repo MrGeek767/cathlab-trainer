@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { ArterySegment } from '@/types/anatomy'
 import { ANATOMY_SCALE, buildArterySpline } from './geometry'
 import { fitEllipsoid, type Ellipsoid } from './ellipsoid'
+import { cineFrameTime, contractionAt } from './cardiac-cycle'
 
 /**
  * How the heart moves at end-systole, as fractions of each distance from the pivot:
@@ -74,4 +75,18 @@ export function heartMotionMatrix(frame: HeartFrame, contraction: number, target
   target.multiply(basis.transpose())
   target.multiply(shift.makeTranslation(-frame.pivot.x, -frame.pivot.y, -frame.pivot.z))
   return target
+}
+
+/**
+ * The heart's pose at `nowMs`, shared by everything that rides on it. On the monitor
+ * (`stepped`) each pose holds for a whole 1/15 s cine frame; in 3D it moves continuously.
+ */
+export function heartMatrixAt(
+  frame: HeartFrame,
+  nowMs: number,
+  { beating, heartRate, stepped }: { beating: boolean; heartRate: number; stepped: boolean },
+  target = new THREE.Matrix4(),
+): THREE.Matrix4 {
+  const contraction = beating ? contractionAt(stepped ? cineFrameTime(nowMs) : nowMs, heartRate) : 0
+  return heartMotionMatrix(frame, contraction, target)
 }

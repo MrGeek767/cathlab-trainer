@@ -83,3 +83,13 @@ input[type="range"]::-webkit-slider-thumb:active {
     scroll-behavior: auto !important;
   }
 }
+
+/* A printer captures the first frame of any animation: print everything at rest. */
+@media print {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

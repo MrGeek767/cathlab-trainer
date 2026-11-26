@@ -21,11 +21,12 @@ function Mark() {
 
 export function AppHeader({ mode, onModeChange, onAbout }: AppHeaderProps) {
   return (
-    <header className="flex h-14 shrink-0 items-stretch justify-between gap-4 border-b border-line bg-panel/70 px-4">
+    <header className="flex h-14 shrink-0 items-stretch justify-between gap-2 border-b border-line bg-panel/70 px-2 md:gap-4 md:px-4">
       <div className="flex items-center gap-2.5">
         <Mark />
-        <h1 className="font-display text-2xl font-semibold tracking-wide text-ink">CathLab Trainer</h1>
-        <span className="rounded px-1.5 py-0.5 text-xs text-xray ring-1 ring-xray/50">Beta</span>
+        {/* On phones the mark stands alone, leaving room for all four tabs and About. */}
+        <h1 className="sr-only font-display text-2xl font-semibold tracking-wide text-ink md:not-sr-only">CathLab Trainer</h1>
+        <span className="hidden rounded px-1.5 py-0.5 text-xs text-xray ring-1 ring-xray/50 md:inline">Beta</span>
       </div>
       <nav aria-label="Main" className="flex items-stretch">
         <ModeTabs value={mode} onChange={onModeChange} />

@@ -32,6 +32,8 @@ interface Scene2DProps {
   /** Contrast shown white on black. */
   invertLut: boolean
   showLabels: boolean
+  /** No names at all, hover included (a question or an exam is on screen). */
+  namesHidden?: boolean
   /** Opaque part of each segment during a cine run; null shows the full road map. */
   opacity?: Map<string, OpaqueRange> | null
   /** Challenge target, drawn highlighted with labels and hover off. */
@@ -80,6 +82,7 @@ export function Scene2D({
   onClickSegment,
   invertLut,
   showLabels,
+  namesHidden = false,
   opacity = null,
   highlightSegmentId = null,
   acquiring = false,
@@ -99,7 +102,9 @@ export function Scene2D({
     <div className="relative h-full w-full">
       <Canvas
         orthographic
-        dpr={[1, 2]}
+        // A fluoro image is soft by nature: past 1.5 device pixels per pixel the extra
+        // sharpness can't be seen, but three density passes would cost twice the work.
+        dpr={[1, 1.5]}
         camera={{ zoom: 120, near: 0.1, far: 200, position: [0, 0, 50] }}
         gl={{ antialias: true }}
       >
@@ -115,9 +120,18 @@ export function Scene2D({
             <AorticRoot segments={anatomy} />
           </>
         )}
+        {/* Outside the heart's group: only its tip rides on the heart (see GuideCatheter). */}
+        {isFluoro && (
+          <GuideCatheter
+            segments={anatomy}
+            side={catheterSide}
+            heart={heart.frame}
+            beating={heartbeat}
+            heartRate={heartRate}
+          />
+        )}
         <HeartMotion frame={heart.frame} beating={heartbeat && isFluoro} heartRate={heartRate}>
           {isFluoro && <HeartShadow ellipsoid={heart.ellipsoid} />}
-          {isFluoro && <GuideCatheter segments={anatomy} side={catheterSide} />}
           <ProjectedArteries
             segments={segments}
             viewMode={viewMode}
@@ -125,6 +139,7 @@ export function Scene2D({
             onHoverSegment={onHoverSegment}
             onClickSegment={onClickSegment}
             showLabels={showLabels}
+            namesHidden={namesHidden}
             opacity={opacity}
             highlightSegmentId={highlightSegmentId}
           />

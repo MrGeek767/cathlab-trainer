@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from 'react'
+import { useState, useMemo, lazy, Suspense } from 'react'
 import { useAngleState } from '@/hooks/useAngleState'
 import { useDragRotation } from '@/hooks/useDragRotation'
 import { useArteryData } from '@/hooks/useArteryData'
@@ -15,7 +15,7 @@ import { MODE_TABS, panelId } from '@/components/layout/ModeTabs'
 import { DISCLAIMER } from '@/data/credits'
 import { useCineRun } from '@/hooks/useCineRun'
 import { useInjectionLoop } from '@/hooks/useInjectionLoop'
-import { vesselOpacity } from '@/utils/monitor-state'
+import { injectionSideFor, labelsState, systemShown, vesselOpacity } from '@/utils/monitor-state'
 import { buildVesselTree, sideOf, type InjectionSide } from '@/utils/contrast'
 import { prefersReducedMotion } from '@/utils/motion'
 import type { DominanceType, ViewMode, AppMode, CoronarySystem, PresetView } from '@/types/angles'
@@ -56,32 +56,39 @@ export default function App() {
     const target = allSegments.find(s => s.id === highlightSegmentId)
     return target ? sideOf(target) : null
   }, [allSegments, highlightSegmentId])
-  // The arteries filter belongs to Explore; the other tabs always show both coronaries.
-  const systemFilter = appMode === 'explore' ? coronarySystem : 'both'
-  const segments = useMemo(() => {
-    const side = highlightSide ?? (systemFilter === 'both' ? null : systemFilter)
-    return side ? allSegments.filter(s => sideOf(s) === side) : allSegments
-  }, [allSegments, systemFilter, highlightSide])
-  // While a target is highlighted, hover and selection are off everywhere so its name cannot leak.
-  const quizLock = highlightSegmentId !== null
   const { hoveredSegmentId, setHoveredSegmentId, selectedSegmentId, setSelectedSegmentId } = useHoveredSegment()
   const [injectionSide, setInjectionSide] = useState<InjectionSide>('left')
   const vesselTree = useMemo(() => buildVesselTree(allSegments), [allSegments])
-  const cine = useCineRun(vesselTree, injectionSide)
-
   // Exams always use the real-fluoro image: no diagram, and arteries only with contrast.
   const [examActive, setExamActive] = useState(false)
   const examOn = appMode === 'challenges' && examActive
   const imageMode: ViewMode = examOn ? 'fluoroscopy' : viewMode
   const realFluoroOn = imageMode === 'fluoroscopy' && (realFluoro || examOn)
-  const monitorOpacity = vesselOpacity(realFluoroOn, cine.opacity)
-  // In real fluoro a highlighted target can only be seen with contrast, so its side is
-  // injected again and again while the question is on screen.
+  // In real fluoro a highlighted target can only be seen with contrast, so its own side
+  // is injected again and again while the question is on screen; the learner's pick of
+  // side is locked meanwhile and comes back afterwards.
   const loopInjections = realFluoroOn && appMode === 'challenges' && highlightSegmentId !== null
-  useEffect(() => {
-    if (loopInjections && highlightSide) setInjectionSide(highlightSide)
-  }, [loopInjections, highlightSide])
+  const cineSide = injectionSideFor(loopInjections ? highlightSide : null, injectionSide)
+  const cine = useCineRun(vesselTree, cineSide)
+  const monitorOpacity = vesselOpacity(realFluoroOn, cine.opacity)
   useInjectionLoop(loopInjections, cine.playing, cine.play)
+  // Names on the monitor; the Labels switch shows exactly what the monitor does. While a
+  // target is highlighted, and for a whole exam, hover and selection are off everywhere
+  // as well, so no name can leak.
+  const labels = labelsState({
+    learn: appMode === 'guided',
+    question: highlightSegmentId !== null,
+    exam: examOn,
+    chosen: showLabels,
+  })
+  const quizLock = highlightSegmentId !== null || examOn
+  // The arteries filter belongs to Explore, and steps aside during a run; the other tabs
+  // always show both coronaries.
+  const systemFilter = systemShown(appMode === 'explore', coronarySystem, cine.playing)
+  const segments = useMemo(() => {
+    const side = highlightSide ?? (systemFilter === 'both' ? null : systemFilter)
+    return side ? allSegments.filter(s => sideOf(s) === side) : allSegments
+  }, [allSegments, systemFilter, highlightSide])
 
   const tabLabel = MODE_TABS.find(tab => tab.mode === appMode)?.label ?? ''
 
@@ -98,8 +105,9 @@ export default function App() {
             onCranialCaudal={setCranialCaudal}
             onPreset={handlePreset}
             showViewHints={appMode !== 'challenges'}
-            injectionSide={injectionSide}
+            injectionSide={cineSide}
             onInjectionSide={setInjectionSide}
+            injectionSideLock={loopInjections ? 'This question injects its own coronary' : undefined}
             playing={cine.playing}
             onInject={cine.play}
             onStop={cine.stop}
@@ -116,8 +124,9 @@ export default function App() {
             realFluoro={realFluoro || examOn}
             onRealFluoro={setRealFluoro}
             realFluoroLocked={examOn}
-            labels={showLabels}
+            labels={labels.on}
             onLabels={setShowLabels}
+            labelsLock={labels.lock}
             inverted={invertLut}
             onInverted={setInvertLut}
             heartbeat={heartbeat}
@@ -134,11 +143,12 @@ export default function App() {
                 raoLao={angles.raoLao}
                 cranialCaudal={angles.cranialCaudal}
                 viewMode={imageMode}
-                hoveredSegmentId={hoveredSegmentId}
-                onHoverSegment={setHoveredSegmentId}
-                onClickSegment={setSelectedSegmentId}
+                hoveredSegmentId={quizLock ? null : hoveredSegmentId}
+                onHoverSegment={quizLock ? IGNORE : setHoveredSegmentId}
+                onClickSegment={quizLock ? IGNORE : setSelectedSegmentId}
                 invertLut={invertLut}
-                showLabels={appMode === 'guided' || showLabels}
+                showLabels={labels.on}
+                namesHidden={quizLock}
                 opacity={monitorOpacity}
                 highlightSegmentId={highlightSegmentId}
                 acquiring={cine.playing}
@@ -147,7 +157,7 @@ export default function App() {
                 realFluoro={realFluoroOn}
                 dominanceLabel={DOMINANCE_LABEL[dominance]}
                 injectHint={realFluoroOn && !cine.playing && !loopInjections}
-                catheterSide={injectionSide}
+                catheterSide={cineSide}
               />
             </div>
           </div>

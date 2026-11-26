@@ -43,3 +43,17 @@ export function catheterPath(segments: ArterySegment[], side: InjectionSide): TH
     'centripetal',
   )
 }
+
+/** The engaged tip moves fully with the ostium for this far from its end... */
+const TIP_FOLLOWS_MM = 10
+/** ...fading out by here, where the shaft lies still in the ascending aorta. */
+const SHAFT_STILL_MM = 50
+
+/**
+ * How much of the heart's motion the catheter takes at `distanceMm` from its tip: all of
+ * it at the engaged tip, none up in the ascending aorta, smoothly in between.
+ */
+export function catheterMotionWeight(distanceMm: number): number {
+  const t = Math.min(Math.max((distanceMm - TIP_FOLLOWS_MM) / (SHAFT_STILL_MM - TIP_FOLLOWS_MM), 0), 1)
+  return 1 - t * t * (3 - 2 * t)
+}

@@ -21,8 +21,7 @@ import { formatView } from '@/utils/format-view'
 import { Segmented } from '@/components/ui/Segmented'
 import { ShowMePanel } from './ShowMePanel'
 import { NameSegmentPanel } from './NameSegmentPanel'
-import { useCountUp } from '@/hooks/useCountUp'
-import { ANSWER_BADGE } from '@/components/ui/rating'
+import { KIND_LABEL, ResultsBody, type AnswerRecord } from './ResultsBody'
 
 interface ChallengeShellProps {
   segments: ArterySegment[]
@@ -35,21 +34,7 @@ interface ChallengeShellProps {
   realFluoro?: boolean
 }
 
-const KIND_LABEL: Record<ChallengeKind, string> = {
-  'show-me': 'Show me',
-  'name-segment': 'Name the segment',
-}
 
-/** One answered item, as the results screen lists it. */
-interface AnswerRecord {
-  kind: ChallengeKind
-  itemId: string
-  correct: boolean
-  prompt: string
-  /** What the learner did, when known (Name the segment reports only right or wrong). */
-  yourAnswer: string | null
-  rightAnswer: string
-}
 
 interface Run {
   id: number
@@ -232,7 +217,7 @@ export function ChallengeShell({
 function Results({ run, best, onNewRun }: { run: Run; best: Record<ChallengeKind, number>; onNewRun: () => void }) {
   return (
     <div className="h-full overflow-y-auto p-4 flex flex-col gap-4 text-ink">
-      <ResultsBody run={run} best={best} />
+      <ResultsBody mode={run.mode} kind={run.kind} answers={run.answers} best={best} />
       <div className="flex gap-2">
         <button
           onClick={() => window.print()}
@@ -251,7 +236,7 @@ function Results({ run, best, onNewRun }: { run: Run; best: Record<ChallengeKind
         <div className="hidden print:block p-8 text-black bg-white">
           <h1 className="text-xl font-bold">CathLab Trainer: challenge results</h1>
           <p className="mb-4 text-sm">{new Date().toLocaleString()}</p>
-          <ResultsBody run={run} best={best} />
+          <ResultsBody mode={run.mode} kind={run.kind} answers={run.answers} best={best} print />
           <p className="mt-6 text-xs">{DISCLAIMER}</p>
         </div>,
         document.body,
@@ -260,60 +245,3 @@ function Results({ run, best, onNewRun }: { run: Run; best: Record<ChallengeKind
   )
 }
 
-function ResultsBody({ run, best }: { run: Run; best: Record<ChallengeKind, number> }) {
-  const summary = summarizeSession(run.answers)
-  const correct = useCountUp(summary.correct)
-  const percent = useCountUp(summary.percent)
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="animate-panel-in">
-        <h3 className="text-sm text-ink-soft">
-          {run.mode === 'exam' ? 'Exam results' : 'Practice results'}, {KIND_LABEL[run.kind]}
-        </h3>
-        <p className="mt-1 font-display text-5xl font-semibold tabular-nums text-white">
-          {percent}%<span className="ml-3 text-xl font-medium text-ink-soft">{correct} of {summary.total} right</span>
-        </p>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-raised" aria-hidden>
-          <div
-            className="h-full origin-left animate-grow rounded-full bg-ecg"
-            style={{ width: `${summary.percent}%` }}
-          />
-        </div>
-        <p className="mt-2 text-xs text-ink-faint">
-          Best exam scores: {CHALLENGE_KINDS.map(kind => `${KIND_LABEL[kind]} ${best[kind]}%`).join(', ')}
-        </p>
-      </div>
-      <ol className="flex flex-col gap-2 text-xs">
-        {run.answers.map((answer, i) => (
-          <li
-            key={`${answer.itemId}-${i}`}
-            className="flex animate-panel-in gap-2.5 rounded-lg bg-raised/50 p-2.5"
-            style={{ animationDelay: `${Math.min(i, 9) * 40}ms` }}
-          >
-            <span
-              className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${
-                answer.correct ? ANSWER_BADGE.right : ANSWER_BADGE.wrong
-              }`}
-            >
-              {answer.correct ? '✓' : '✗'}
-              <span className="sr-only">{answer.correct ? 'right' : 'wrong'}</span>
-            </span>
-            <span className="leading-relaxed text-ink-soft">
-              <span className="text-ink">
-                {i + 1}. {answer.prompt}
-              </span>
-              {answer.yourAnswer && (
-                <>
-                  <br />
-                  Your shot: {answer.yourAnswer}
-                </>
-              )}
-              <br />
-              Answer: {answer.rightAnswer}
-            </span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )
-}

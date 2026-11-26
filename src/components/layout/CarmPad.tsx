@@ -15,6 +15,8 @@ interface CarmPadProps {
   showViewHints: boolean
   injectionSide: InjectionSide
   onInjectionSide: (side: InjectionSide) => void
+  /** Set while a question picks the side, with the reason shown under the control. */
+  injectionSideLock?: string
   playing: boolean
   onInject: () => void
   onStop: () => void
@@ -62,6 +64,7 @@ export function CarmPad(props: CarmPadProps) {
         <CineControls
           side={props.injectionSide}
           onSideChange={props.onInjectionSide}
+          sideLock={props.injectionSideLock}
           playing={props.playing}
           onPlay={props.onInject}
           onStop={props.onStop}

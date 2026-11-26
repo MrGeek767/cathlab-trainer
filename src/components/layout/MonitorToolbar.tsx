@@ -11,6 +11,8 @@ interface MonitorToolbarProps {
   realFluoroLocked: boolean
   labels: boolean
   onLabels: (on: boolean) => void
+  /** Why labels are forced on or off right now (Learn, a question, an exam). */
+  labelsLock: string | null
   inverted: boolean
   onInverted: (on: boolean) => void
   heartbeat: boolean
@@ -60,7 +62,16 @@ export function MonitorToolbar(props: MonitorToolbarProps) {
         </span>
       )}
       <span className="flex-1" />
-      <Toggle label="Labels" pressed={props.labels} onChange={props.onLabels} title="Name every segment on the image" />
+      {/* The diagram always names its segments, so the switch belongs to fluoro. */}
+      {fluoro && (
+        <Toggle
+          label="Labels"
+          pressed={props.labels}
+          onChange={props.onLabels}
+          lock={props.labelsLock}
+          title="Name every segment on the image"
+        />
+      )}
       {fluoro && (
         <Toggle label="Invert" pressed={props.inverted} onChange={props.onInverted} title="Show contrast white on black" />
       )}
