@@ -71,6 +71,25 @@ describe('PracticePanel', () => {
     act(() => view.root.unmount())
   })
 
+  it('brings a new note into view when the panel scrolls', () => {
+    const before = initialPractice(ctx)
+    const onAction = vi.fn()
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    act(() => root.render(<PracticePanel state={before} onAction={onAction} onFinalShot={() => {}} />))
+    const box = host.firstElementChild as HTMLElement
+    const notes = host.querySelector('[aria-label="Notes"]') as HTMLElement
+    Object.defineProperty(box, 'clientHeight', { value: 300 })
+    Object.defineProperty(box, 'scrollHeight', { value: 1000 })
+    box.getBoundingClientRect = () => ({ top: 100 }) as DOMRect
+    notes.getBoundingClientRect = () => ({ top: 800 }) as DOMRect
+    const note = { key: 'n1', grade: 'best' as const, title: 'On the operator’s target', text: 'At 6 atm the chart gives 2.50 mm.', reference: null }
+    act(() => root.render(<PracticePanel state={{ ...before, notes: [note] }} onAction={onAction} onFinalShot={() => {}} />))
+    expect(box.scrollTop).toBe(700 - 8)
+    act(() => root.unmount())
+  })
+
   it('offers the final shot only when allowed', () => {
     const early = render(initialPractice(ctx))
     expect(early.button('Final shot')!.disabled).toBe(true)

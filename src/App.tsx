@@ -20,6 +20,8 @@ import { useDevicePush } from '@/hooks/useDevicePush'
 import { useWorkingView } from '@/hooks/useWorkingView'
 import { effectiveDominance } from '@/practice/app-rules'
 import { PracticePanel } from '@/components/practice/PracticePanel'
+import { InflationDevice } from '@/components/practice/InflationDevice'
+import { DeviceButtons } from '@/components/practice/DeviceButtons'
 import { injectionSideFor, labelsState, systemShown, vesselOpacity } from '@/utils/monitor-state'
 import { buildVesselTree, sideOf, type InjectionSide } from '@/utils/contrast'
 import { prefersReducedMotion } from '@/utils/motion'
@@ -210,6 +212,27 @@ export default function App() {
                 lumens={cathlab ? practice.lumens : undefined}
                 devices={cathlab ? practice.devices : null}
               />
+              {/* The device controls sit over the image, out of the monitor's drag. */}
+              {cathlab && practice.state.inflation && practice.state.inHand && (
+                <div data-no-drag className="absolute inset-x-2 bottom-2 z-20 sm:inset-x-3 sm:bottom-3">
+                  <InflationDevice
+                    device={practice.state.inHand}
+                    inflation={practice.state.inflation}
+                    call={practice.state.call}
+                    onAction={practice.dispatch}
+                  />
+                </div>
+              )}
+              {/* Kept mounted while inflating, so its Inflate button can take focus back after. */}
+              {cathlab && (
+                <div data-no-drag className={`absolute bottom-11 left-1/2 z-20 w-max -translate-x-1/2 ${practice.state.inflation ? 'hidden' : ''}`}>
+                  <DeviceButtons
+                    disabled={!practice.state.inHand}
+                    onMove={deltaMm => practice.dispatch({ type: 'move', deltaMm })}
+                    onInflate={() => practice.dispatch({ type: 'inflate' })}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </section>

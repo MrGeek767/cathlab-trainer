@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { BALLOONS, STENTS, deviceName, type BalloonKind, type Device } from '@/data/devices'
 import { chartRows } from '@/practice/compliance'
 import { PRACTICE_REFERENCES } from '@/practice/grades'
@@ -33,6 +33,23 @@ const BUTTON =
 export function PracticePanel({ state, onAction, onFinalShot }: PracticePanelProps) {
   const [view, setView] = useState<ShelfView>('balloons')
   const [kind, setKind] = useState<BalloonKind>('semi-compliant')
+
+  // A new note is the feedback on what the learner just did: when the panel scrolls (on
+  // larger screens), bring it into view. On a phone the page scrolls instead, and the
+  // learner stays at the monitor.
+  const boxRef = useRef<HTMLDivElement>(null)
+  const notesRef = useRef<HTMLElement>(null)
+  const noteCount = state.notes.length
+  const seen = useRef(noteCount)
+  useEffect(() => {
+    const grew = noteCount > seen.current
+    seen.current = noteCount
+    const box = boxRef.current
+    const notes = notesRef.current
+    if (!grew || !box || !notes || box.scrollHeight <= box.clientHeight) return
+    const top = notes.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop
+    box.scrollTop = Math.max(0, top - 8)
+  }, [noteCount])
   const current = ORDER.indexOf(state.step)
   const canFinish = (state.step === 'postdilate' || state.step === 'final') && state.vessel.stent !== null && !state.inflation
 
@@ -49,7 +66,7 @@ export function PracticePanel({ state, onAction, onFinalShot }: PracticePanelPro
   const locked = shelfLock ?? (view === 'stents' ? stentLock : null)
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto p-4 text-ink">
+    <div ref={boxRef} className="flex h-full scroll-smooth flex-col gap-4 overflow-y-auto p-4 text-ink motion-reduce:scroll-auto">
       <div>
         <h2 className="text-base font-semibold text-white">Practice: proximal LAD</h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-soft">
@@ -164,7 +181,7 @@ export function PracticePanel({ state, onAction, onFinalShot }: PracticePanelPro
         </div>
       </section>
 
-      <section aria-label="Notes" className="flex flex-col gap-2">
+      <section ref={notesRef} aria-label="Notes" className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold">Notes</h3>
         {state.notes.length === 0 && <p className="text-xs text-ink-faint">Pick a device from the shelf to begin.</p>}
         <ol className="flex flex-col gap-2">
