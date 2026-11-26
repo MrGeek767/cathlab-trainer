@@ -11,6 +11,8 @@ import { Landmarks3D } from './Landmarks3D'
 import { AorticRoot, HeartShadow, Ribs } from './BodyShadows'
 import { HeartMotion } from './HeartMotion'
 import { GuideCatheter } from './GuideCatheter'
+import { PracticeDevices } from './PracticeDevices'
+import type { DeviceScene } from '@/practice/device-shapes'
 import type { InjectionSide } from '@/utils/contrast'
 import { heartFromAnatomy } from '@/utils/heart-motion'
 import { HEART_RATE } from '@/utils/cardiac-cycle'
@@ -36,6 +38,8 @@ interface Scene2DProps {
   namesHidden?: boolean
   /** Lumen radius (mm) by distance along the drawn segment, for a segment with a lesion. */
   lumens?: ReadonlyMap<string, (mm: number) => number>
+  /** The practice's wire, balloon and stent, drawn on the fluoro image. */
+  devices?: DeviceScene | null
   /** Opaque part of each segment during a cine run; null shows the full road map. */
   opacity?: Map<string, OpaqueRange> | null
   /** Challenge target, drawn highlighted with labels and hover off. */
@@ -86,6 +90,7 @@ export function Scene2D({
   showLabels,
   namesHidden = false,
   lumens,
+  devices = null,
   opacity = null,
   highlightSegmentId = null,
   acquiring = false,
@@ -147,6 +152,7 @@ export function Scene2D({
             opacity={opacity}
             highlightSegmentId={highlightSegmentId}
           />
+          {isFluoro && devices && <PracticeDevices scene={devices} />}
         </HeartMotion>
       </Canvas>
 
