@@ -18,7 +18,13 @@ function runFrame() {
   frames = []
   due.forEach(f => f.callback(now))
 }
-const settle = () => new Promise(resolve => setTimeout(resolve, 20))
+// Let React finish rendering. Its scheduler works in setImmediate slices, and on a busy
+// machine a short timer alone can fire before them, so drain those slices first.
+const { setImmediate: nextSlice } = globalThis as unknown as { setImmediate: (callback: () => void) => void }
+const settle = async () => {
+  for (let i = 0; i < 20; i++) await new Promise<void>(resolve => nextSlice(resolve))
+  await new Promise(resolve => setTimeout(resolve, 20))
+}
 
 beforeEach(() => {
   now = 0
