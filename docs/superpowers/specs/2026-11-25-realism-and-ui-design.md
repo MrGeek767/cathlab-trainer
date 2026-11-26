@@ -66,3 +66,18 @@ Type: Atkinson Hyperlegible (built for legibility) for all reading text, at 15 p
 ## Motion
 
 Motion answers actions. Tabs slide their indicator, panels fade in, feedback appears, the results score counts up, and the C-arm swings smoothly. There are no decorative entrance effects. Everything except the C-arm swing is off under prefers-reduced-motion.
+
+## After the final review (26 Nov)
+
+An independent review of the whole branch found three problems, all fixed with tests: printed results came out blank (the print copy now has no animation and dark ink), picking the other coronary during a real-fluoro question left it blank (the question now drives the injection side and locks the control), and phones lost three of the five header controls (tabs are icon-only below 768 px, the title text hides, names stay for screen readers).
+
+Calls made on the owner's behalf while he was away:
+
+- **Labels switch.** It now always shows what the monitor does: locked on in Learn, locked off while a question or an exam is on screen, hidden with the diagram (which always names its segments).
+- **Exams hide every name**, hover included, in Show me as well as Name the segment. An exam tests the learner, so the screen must not name the vessels.
+- **Guide catheter motion.** Only the engaged tip follows the heart; the shaft fades to still within 5 cm, like the aortic shadow around it.
+- **Arteries filter.** In Explore it steps aside during a run, so injecting the coronary the filter hides still shows it.
+- **Overlap readout.** Fixing the tube width (vessels were drawn 1.8 times too wide) also tightened the overlap check in the quality list, which uses 3 × the true radius. About half the segment-view overlap lists changed (at AP the left main is no longer flagged against the proximal RCA). The new lists are physically consistent, so they stay. The ratings, Show me scoring and the best-view map use the Di Mario table and did not change.
+- **Robustness.** Density buffers fall back to 8-bit on graphics cards that can't draw into half floats (the densest vessels clip, but the image shows). The monitor renders at no more than 1.5 device pixels per pixel.
+
+Left for later (minor): hover state can go stale on a moving vessel until the pointer moves; the fluoro pipeline renders every display frame though the image changes 15 times a second; under reduced motion the still ECG doesn't redraw when the window is resized; some 13 px secondary text, Title Case labels and alarm-red text without a ✗ remain in the quiz and Learn panels; small nits (render-target rounding, uniforms written during render, a stale comment in the best-view map).
