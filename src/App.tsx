@@ -12,7 +12,7 @@ import { CarmPad } from '@/components/layout/CarmPad'
 import { MonitorToolbar } from '@/components/layout/MonitorToolbar'
 import { ExplorePanel } from '@/components/layout/ExplorePanel'
 import { MODE_TABS, panelId } from '@/components/layout/ModeTabs'
-import { DISCLAIMER } from '@/data/credits'
+import { AppFooter } from '@/components/layout/AppFooter'
 import { useCineRun } from '@/hooks/useCineRun'
 import { useInjectionLoop } from '@/hooks/useInjectionLoop'
 import { injectionSideFor, labelsState, systemShown, vesselOpacity } from '@/utils/monitor-state'
@@ -223,14 +223,7 @@ export default function App() {
       </main>
 
       {/* The disclaimer, and the attribution the heart model's CC BY 4.0 licence requires */}
-      <footer className="shrink-0 px-4 pb-2 text-center text-xs text-ink-faint">
-        <span className="text-ink-soft">{DISCLAIMER}</span> Heart model:{' '}
-        <a href="https://sketchfab.com/3d-models/realistic-human-heart-3f8072336ce94d18b3d0d055a1ece089" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-soft">&ldquo;Realistic Human Heart&rdquo;</a>{' '}
-        by{' '}
-        <a href="https://sketchfab.com/neshallads" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-soft">neshallads</a>,{' '}
-        licensed{' '}
-        <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-soft">CC BY 4.0</a>.
-      </footer>
+      <AppFooter />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   )

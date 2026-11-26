@@ -21,7 +21,7 @@ function Mark() {
 
 export function AppHeader({ mode, onModeChange, onAbout }: AppHeaderProps) {
   return (
-    <header className="flex h-14 shrink-0 items-stretch justify-between gap-2 border-b border-line bg-panel/70 px-2 md:gap-4 md:px-4">
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-stretch justify-between gap-2 border-b border-line bg-panel/75 px-2 backdrop-blur-md md:gap-4 md:px-4">
       <div className="flex items-center gap-2.5">
         <Mark />
         {/* On phones the mark stands alone, leaving room for all four tabs and About. */}

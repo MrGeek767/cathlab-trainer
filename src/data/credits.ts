@@ -1,23 +1,44 @@
-/** Who made what this app is built on, the sources its answers come from, and its limits. */
+/** Who made the app, whose work it uses, the sources its answers come from, and its limits. */
+
+/** Credited in the footer of every screen. */
+export const CREATOR = 'Omar M. Noreldin'
+
 export interface Credit {
+  /** What the work is to this app, such as "Base code". */
+  role: string
   item: string
   author: string
-  licence: string
+  licence?: string
   url: string
 }
 
 export const CREDITS: Credit[] = [
   {
-    item: 'iiviewer (CathLabSimulator) code',
+    role: 'Base code',
+    item: 'iiviewer (CathLabSimulator)',
     author: 'annasrahman.com',
-    licence: "Used and modified with the author's permission",
     url: 'https://annasrahman.com',
   },
   {
-    item: 'Realistic Human Heart (3D model)',
+    role: '3D heart model',
+    item: 'Realistic Human Heart',
     author: 'neshallads',
     licence: 'CC BY 4.0',
     url: 'https://sketchfab.com/3d-models/realistic-human-heart-3f8072336ce94d18b3d0d055a1ece089',
+  },
+  {
+    role: 'Typeface',
+    item: 'Atkinson Hyperlegible',
+    author: 'the Braille Institute',
+    licence: 'SIL Open Font License 1.1',
+    url: 'https://www.brailleinstitute.org/freefont/',
+  },
+  {
+    role: 'Typeface',
+    item: 'Barlow Condensed',
+    author: 'Jeremy Tribby',
+    licence: 'SIL Open Font License 1.1',
+    url: 'https://tribby.com/fonts/barlow/',
   },
 ]
 
@@ -38,8 +59,6 @@ export const REFERENCES: Reference[] = [
 ]
 
 export const DISCLAIMER = 'Educational simulation, not for clinical use.'
-
-export const NON_AFFILIATION = 'CathLab Trainer is an independent project and is not affiliated with AngioView.'
 
 export const SIMPLIFICATIONS: string[] = [
   'The coronary tree is a hand-built model, not a real patient.',

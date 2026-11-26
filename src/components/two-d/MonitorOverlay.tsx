@@ -34,7 +34,7 @@ export function MonitorOverlay(props: MonitorOverlayProps) {
         </div>
       </div>
       {props.fluoro && props.injectHint && (
-        <p className="mx-auto animate-panel-in rounded-full bg-black/60 px-3 py-1 font-sans text-xs text-white/90 [text-shadow:none] sm:text-sm">
+        <p className="mx-auto animate-panel-in rounded-full border border-white/10 bg-black/35 px-3 py-1 font-sans text-xs text-white/90 backdrop-blur-md [text-shadow:none] sm:text-sm">
           Arteries show only while contrast flows. Press <span className="font-semibold text-xray">Inject contrast</span>.
         </p>
       )}

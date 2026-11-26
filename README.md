@@ -5,7 +5,8 @@ A free browser game that teaches cath lab nurses and technologists angiographic 
 **Live:** <https://mrgeek767.github.io/cathlab-trainer/>
 
 > Educational simulation, not for clinical use.
-> CathLab Trainer is an independent project and is not affiliated with AngioView.
+
+Created by Omar M. Noreldin.
 
 ## What's in it
 
@@ -15,9 +16,9 @@ A free browser game that teaches cath lab nurses and technologists angiographic 
 
 Coming next: the device engine (guide catheters, wires, balloons, stents) and three PCI cases with referenced, tiered scoring.
 
-## Built on
+## Credits
 
-[iiviewer](https://annasrahman.com) by its author, used and modified with permission. See [CREDITS.md](CREDITS.md) and [LICENSE.md](LICENSE.md).
+Base code: [iiviewer (CathLabSimulator)](https://annasrahman.com) by annasrahman.com. Full credits are in [CREDITS.md](CREDITS.md); licences in [LICENSE.md](LICENSE.md).
 
 ## Development
 

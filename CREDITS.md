@@ -1,6 +1,8 @@
 # Credits
 
-- **iiviewer (CathLabSimulator)**: the coronary view simulator this game is built on, by <https://annasrahman.com>. Used and modified with the author's permission.
+Created by **Omar M. Noreldin**.
+
+- **Base code: iiviewer (CathLabSimulator)** by <https://annasrahman.com>, used and modified with the author's permission.
 - **"Realistic Human Heart" 3D model** by [neshallads](https://sketchfab.com/neshallads), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Source: <https://sketchfab.com/3d-models/realistic-human-heart-3f8072336ce94d18b3d0d055a1ece089>
 - **Atkinson Hyperlegible** typeface by the Braille Institute, and **Barlow Condensed** by Jeremy Tribby, both under the [SIL Open Font License 1.1](https://openfontlicense.org), self-hosted through Fontsource.
 

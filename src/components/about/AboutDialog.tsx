@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { CREDITS, REFERENCES, SIMPLIFICATIONS, DISCLAIMER, NON_AFFILIATION } from '@/data/credits'
+import { CREDITS, REFERENCES, SIMPLIFICATIONS, DISCLAIMER } from '@/data/credits'
 
 interface AboutDialogProps {
   open: boolean
@@ -25,12 +25,12 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex animate-panel-in items-center justify-center bg-room/60 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="about-title"
-        className="max-h-full w-full max-w-lg overflow-y-auto rounded-xl border border-line bg-panel p-5 text-sm text-ink shadow-xl"
+        className="max-h-full w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-panel/80 p-5 text-sm text-ink shadow-2xl shadow-black/40 backdrop-blur-xl"
         onClick={event => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -46,16 +46,16 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           </button>
         </div>
         <p className="mt-2 font-medium text-ink">{DISCLAIMER}</p>
-        <p className="mt-1 text-xs text-ink-soft">{NON_AFFILIATION}</p>
-
-        <h3 className="mt-4 text-xs font-semibold text-ink-faint">Built on</h3>
+        <h3 className="mt-4 text-xs font-semibold text-ink-faint">Credits</h3>
         <ul className="mt-1 flex flex-col gap-1">
           {CREDITS.map(credit => (
             <li key={credit.item}>
+              <span className="text-ink-soft">{credit.role}:</span>{' '}
               <a href={credit.url} target="_blank" rel="noopener noreferrer" className={LINK}>
                 {credit.item}
               </a>{' '}
-              by {credit.author}. {credit.licence}.
+              by {credit.author}
+              {credit.licence ? `, ${credit.licence}` : ''}.
             </li>
           ))}
         </ul>

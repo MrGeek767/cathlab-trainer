@@ -35,8 +35,6 @@ export function EcgTrace({ heartRate, className = '' }: { heartRate: number; cla
       context.strokeStyle = ECG_GREEN
       context.lineWidth = 1.5
       context.lineJoin = 'round'
-      context.shadowColor = 'rgba(57, 217, 138, 0.55)'
-      context.shadowBlur = 4
       context.beginPath()
       let drawing = false
       samples.forEach((value, x) => {

@@ -6,7 +6,7 @@ Status: approved by Omar, 25 Nov 2026. Built on the iiviewer repository Omar sup
 
 Cath lab nurses and technologists mostly learn angiographic views, equipment, sizing and their own procedural tasks on the job, with real patients. This game gives them a safe place to practise. It is free, runs in a browser, and every scored answer carries a reference.
 
-Omar runs staff education. He liked AngioView (angioview.com) for teaching views and wants the idea taken further, into whole procedures: choosing catheters, wires, balloons and stents with the right sizes, and steering the wire with the mouse.
+Omar runs staff education. He wants a view trainer that goes further, into whole procedures: choosing catheters, wires, balloons and stents with the right sizes, and steering the wire with the mouse.
 
 What success looks like:
 - a learner can name the view and the segment on a cine frame
@@ -18,7 +18,7 @@ What success looks like:
 ## 2. Goals, non-goals, anti-goals
 
 **Goals**
-- An AngioView-style angle trainer
+- An angle trainer
 - Three procedure cases with device choice, sizing and mouse-driven wire and catheter handling
 - Evidence-based, referenced, tiered scoring
 - Zero cost, public code, free hosting
@@ -35,7 +35,7 @@ What success looks like:
 - teaching anything unsafe or out of date
 - presenting one operator's preference as the only right answer
 - using any asset or code we aren't licensed or permitted to use
-- looking like a copy of AngioView
+- looking like a copy of another product
 - needing anything paid
 - any patient-identifiable image
 
@@ -212,7 +212,7 @@ Starter rules (reviewers to confirm):
 - **iiviewer code:** used with its author's permission (annasrahman.com) and credited in the app and the README. The repository has no licence file, so the permission's scope decides how it's published.
 - **New code:** MIT licence. **Written content:** CC BY 4.0.
 - **Attribution page:** Sketchfab heart by neshallads, CADICA and Servier Medical Art (all CC BY 4.0), plus any HRA models if used.
-- **Disclaimers:** on every screen, "Educational simulation, not for clinical use." The About page says the game is not affiliated with AngioView.
+- **Disclaimers:** on every screen, "Educational simulation, not for clinical use."
 
 ## 7. Phases
 
@@ -255,7 +255,6 @@ Visual details and noise settings; exact scoring thresholds until the reviewers 
 
 ## 11. Sources
 
-- AngioView: https://angioview.com
 - iiviewer / CathLabSimulator (repository supplied by Omar; author: https://annasrahman.com), including its Angiographic Correctness Audit
 - Sketchfab heart, "Realistic Human Heart" by neshallads (CC BY 4.0): https://sketchfab.com/3d-models/realistic-human-heart-3f8072336ce94d18b3d0d055a1ece089
 - HRA releases (heart v1.3, vasculature v1.4, CC BY 4.0): https://github.com/hubmapconsortium/ccf-releases
@@ -275,3 +274,6 @@ Visual details and noise settings; exact scoring thresholds until the reviewers 
 - Lesion preparation (CIT 2024): https://citoday.com/articles/2024-may-june/drug-coated-balloons
 - GitHub Pages availability: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
 - Prior art, free non-commercial view simulator on real CT: https://github.com/crp372/coronary-view-simulator
+
+
+> 26 Nov: the owner's footer credit (Omar M. Noreldin) replaced the heart-model credit in the footer; everyone else is credited in About, the base code as "Base code". The app names no other product.
