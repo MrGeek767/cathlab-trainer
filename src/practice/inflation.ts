@@ -36,9 +36,15 @@ export interface Span {
 
 export interface PlacedStent extends Span {
   nominalDiameterMm: number
+  /** It left part (or all) of the lesion and its landing zones uncovered. */
+  missedLesion?: boolean
 }
 
 export type Finding =
+  /** The device was inflated beside the lesion and covered none of it. */
+  | { kind: 'missed-lesion'; by: 'balloon' | 'stent' }
+  /** A post-dilation balloon inflated outside the stent it was meant to expand. */
+  | { kind: 'missed-stent' }
   | { kind: 'geographic-miss'; uncoveredMm: number }
   | { kind: 'edge-dissection-risk'; atMm: number; ratio: number }
   | { kind: 'residual-stenosis'; percentOfReference: number }
@@ -52,6 +58,7 @@ export interface Vessel {
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * Math.min(Math.max(t, 0), 1)
 const within = (mm: number, span: Span) => mm >= span.startMm - 1e-9 && mm <= span.endMm + 1e-9
+const overlap = (a: Span, b: Span) => Math.max(0, Math.min(a.endMm, b.endMm) - Math.max(a.startMm, b.startMm))
 
 /** Apply one inflation of `device` over `span` at `atm`, returning the new vessel and what it found. */
 export function applyInflation(
@@ -93,17 +100,21 @@ export function applyInflation(
   let predilated = vessel.predilated
   let stent = stentBefore
   if (isStent) {
-    stent = { startMm: span.startMm, endMm: span.endMm, nominalDiameterMm: device.diameterMm }
     const shortfall = Math.max(
       span.startMm - (lesionSpan.startMm - RESPONSE.landingMm),
       lesionSpan.endMm + RESPONSE.landingMm - span.endMm,
     )
-    if (shortfall > 1e-9) findings.push({ kind: 'geographic-miss', uncoveredMm: shortfall })
+    // A stent on healthy vessel missed the lesion outright; one short of a landing zone is a geographic miss.
+    if (overlap(span, lesionSpan) <= 1e-9) findings.push({ kind: 'missed-lesion', by: 'stent' })
+    else if (shortfall > 1e-9) findings.push({ kind: 'geographic-miss', uncoveredMm: shortfall })
+    stent = { startMm: span.startMm, endMm: span.endMm, nominalDiameterMm: device.diameterMm, missedLesion: shortfall > 1e-9 }
   } else if (!stentBefore) {
-    const covered = Math.max(0, Math.min(span.endMm, lesionSpan.endMm) - Math.max(span.startMm, lesionSpan.startMm))
-    const coveredFraction = covered / lesion.lengthMm
+    const coveredFraction = overlap(span, lesionSpan) / lesion.lengthMm
     if (coveredFraction >= RESPONSE.preparedCover) predilated = true
-    if (coveredFraction > 0 && coveredFraction < 1 - 1e-9) findings.push({ kind: 'partial-cover', coveredFraction })
+    if (coveredFraction <= 1e-9) findings.push({ kind: 'missed-lesion', by: 'balloon' })
+    else if (coveredFraction < 1 - 1e-9) findings.push({ kind: 'partial-cover', coveredFraction })
+  } else if (overlap(span, stentBefore) <= 1e-9) {
+    findings.push({ kind: 'missed-stent' })
   }
 
   // Edges: a stent at both ends; a balloon where it reaches beyond any stent.

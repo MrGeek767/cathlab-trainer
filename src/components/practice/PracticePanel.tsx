@@ -34,22 +34,24 @@ export function PracticePanel({ state, onAction, onFinalShot }: PracticePanelPro
   const [view, setView] = useState<ShelfView>('balloons')
   const [kind, setKind] = useState<BalloonKind>('semi-compliant')
 
-  // A new note is the feedback on what the learner just did: when the panel scrolls (on
-  // larger screens), bring it into view. On a phone the page scrolls instead, and the
-  // learner stays at the monitor.
+  // The outcome of an inflation or of the final shot is the feedback to see: when the panel
+  // scrolls (on larger screens), bring the notes into view then. A pick leaves the shelf and
+  // the chart where they are. On a phone the page scrolls instead, and nothing moves.
   const boxRef = useRef<HTMLDivElement>(null)
   const notesRef = useRef<HTMLElement>(null)
   const noteCount = state.notes.length
-  const seen = useRef(noteCount)
+  const inflating = state.inflation !== null
+  const seen = useRef({ inflating, step: state.step, count: noteCount })
   useEffect(() => {
-    const grew = noteCount > seen.current
-    seen.current = noteCount
+    const was = seen.current
+    seen.current = { inflating, step: state.step, count: noteCount }
+    const outcome = (was.inflating && !inflating) || (state.step === 'done' && was.step !== 'done')
     const box = boxRef.current
     const notes = notesRef.current
-    if (!grew || !box || !notes || box.scrollHeight <= box.clientHeight) return
+    if (!outcome || noteCount <= was.count || !box || !notes || box.scrollHeight <= box.clientHeight) return
     const top = notes.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop
     box.scrollTop = Math.max(0, top - 8)
-  }, [noteCount])
+  }, [inflating, state.step, noteCount])
   const current = ORDER.indexOf(state.step)
   const canFinish = (state.step === 'postdilate' || state.step === 'final') && state.vessel.stent !== null && !state.inflation
 
@@ -58,7 +60,13 @@ export function PracticePanel({ state, onAction, onFinalShot }: PracticePanelPro
     : state.step === 'done'
       ? 'Start again to practise once more.'
       : null
-  const stentLock = state.vessel.stent ? 'One stent covers this lesion. Post-dilate the stent you placed instead.' : null
+  const stentLock = state.vessel.stent
+    ? state.vessel.stent.missedLesion
+      ? 'This practice places one stent. Start again to retry the placement.'
+      : 'One stent covers this lesion. Post-dilate the stent you placed instead.'
+    : null
+  const finalLock =
+    state.step === 'done' ? null : state.inflation ? 'Deflate before the final shot.' : !state.vessel.stent ? 'Deploy a stent before the final shot.' : null
 
   const devices: Device[] = view === 'stents' ? STENTS : BALLOONS.filter(b => b.kind === kind)
   const diameters = [...new Set(devices.map(d => d.diameterMm))]
@@ -110,12 +118,18 @@ export function PracticePanel({ state, onAction, onFinalShot }: PracticePanelPro
           <button
             type="button"
             disabled={!canFinish}
+            aria-describedby={finalLock ? 'final-shot-reason' : undefined}
             onClick={onFinalShot}
             className="rounded-lg bg-xray px-3 py-1.5 text-sm font-bold text-room transition-[filter] duration-150 enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:bg-raised disabled:text-ink-faint"
           >
             Final shot
           </button>
         </div>
+        {finalLock && (
+          <p id="final-shot-reason" className="mt-1.5 text-xs text-ink-faint">
+            {finalLock}
+          </p>
+        )}
       </section>
 
       {state.inHand && <InHand device={state.inHand} inflating={!!state.inflation} onAction={onAction} />}

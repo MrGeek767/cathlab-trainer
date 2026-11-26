@@ -71,23 +71,57 @@ describe('PracticePanel', () => {
     act(() => view.root.unmount())
   })
 
-  it('brings a new note into view when the panel scrolls', () => {
+  it('scrolls to the notes after an inflation or the final shot, not after a pick', () => {
     const before = initialPractice(ctx)
     const onAction = vi.fn()
     const host = document.createElement('div')
     document.body.appendChild(host)
     const root = createRoot(host)
-    act(() => root.render(<PracticePanel state={before} onAction={onAction} onFinalShot={() => {}} />))
+    const show = (state: PracticeState) =>
+      act(() => root.render(<PracticePanel state={state} onAction={onAction} onFinalShot={() => {}} />))
+    show(before)
     const box = host.firstElementChild as HTMLElement
     const notes = host.querySelector('[aria-label="Notes"]') as HTMLElement
     Object.defineProperty(box, 'clientHeight', { value: 300 })
     Object.defineProperty(box, 'scrollHeight', { value: 1000 })
     box.getBoundingClientRect = () => ({ top: 100 }) as DOMRect
     notes.getBoundingClientRect = () => ({ top: 800 }) as DOMRect
-    const note = { key: 'n1', grade: 'best' as const, title: 'On the operator’s target', text: 'At 6 atm the chart gives 2.50 mm.', reference: null }
-    act(() => root.render(<PracticePanel state={{ ...before, notes: [note] }} onAction={onAction} onFinalShot={() => {}} />))
+    const note = (n: number) => ({ key: `n${n}`, grade: 'best' as const, title: `Note ${n}`, text: 'text', reference: null })
+    // A pick adds a note: the shelf and the chart stay where they are.
+    const picked = { ...before, inHand: deviceById('sc-2.50x15')!, notes: [note(1)] }
+    show(picked)
+    expect(box.scrollTop).toBe(0)
+    // An inflation's outcome is the feedback to see.
+    const inflating = { ...picked, inflation: { atm: 6, peakAtm: 6, overRbpAllowed: false, needsConfirm: false } }
+    show(inflating)
+    show({ ...inflating, inflation: null, notes: [note(1), note(2)] })
     expect(box.scrollTop).toBe(700 - 8)
     act(() => root.unmount())
+  })
+
+  it('says why the final shot is not ready yet', () => {
+    const early = render(initialPractice(ctx))
+    const button = early.button('Final shot')!
+    const reason = early.host.querySelector(`#${button.getAttribute('aria-describedby')}`)
+    expect(reason?.textContent).toBe('Deploy a stent before the final shot.')
+    act(() => early.root.unmount())
+    const inflating = { ...initialPractice(ctx), step: 'postdilate' as const }
+    inflating.vessel = { ...inflating.vessel, stent: { startMm: 5, endMm: 23, nominalDiameterMm: 3 } }
+    inflating.inHand = deviceById('nc-3.25x12')!
+    inflating.inflation = { atm: 16, peakAtm: 16, overRbpAllowed: false, needsConfirm: false }
+    const late = render(inflating)
+    expect(late.host.textContent).toContain('Deflate before the final shot.')
+    act(() => late.root.unmount())
+  })
+
+  it('after a missed stent, says how to retry rather than that one stent covers the lesion', () => {
+    const state = { ...initialPractice(ctx), step: 'postdilate' as const }
+    state.vessel = { ...state.vessel, stent: { startMm: 14, endMm: 32, nominalDiameterMm: 3, missedLesion: true } }
+    const view = render(state)
+    view.click(view.radio('Stents'))
+    expect(view.host.textContent).toContain('This practice places one stent. Start again to retry the placement.')
+    expect(view.host.textContent).not.toContain('One stent covers this lesion')
+    act(() => view.root.unmount())
   })
 
   it('offers the final shot only when allowed', () => {

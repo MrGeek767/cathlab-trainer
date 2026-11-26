@@ -30,7 +30,7 @@ describe('applyInflation: how the lesion responds', () => {
 
   it('a 3.0 stent at nominal after predilation leaves residual narrowing', () => {
     const { vessel, findings } = inflate(predilated(), 'des-3.00x18', 5, 23, 9)
-    expect(vessel.stent).toEqual({ startMm: 5, endMm: 23, nominalDiameterMm: 3 })
+    expect(vessel.stent).toEqual({ startMm: 5, endMm: 23, nominalDiameterMm: 3, missedLesion: false })
     const residual = findings.find(f => f.kind === 'residual-stenosis') as { percentOfReference: number } | undefined
     expect(residual).toBeDefined()
     expect(residual!.percentOfReference).toBeGreaterThan(84)
@@ -64,6 +64,28 @@ describe('applyInflation: how the lesion responds', () => {
     const edges = inflate(predilated(), 'des-3.50x18', 5, 23, 16).findings.filter(f => f.kind === 'edge-dissection-risk')
     expect(edges).toHaveLength(2)
     for (const edge of edges as { ratio: number }[]) expect(edge.ratio).toBeGreaterThan(1.1)
+  })
+
+  it('a stent that covers none of the lesion is a miss, not a short landing zone', () => {
+    const { vessel, findings } = inflate(predilated(), 'des-3.00x18', 30, 48, 13)
+    expect(findings).toContainEqual({ kind: 'missed-lesion', by: 'stent' })
+    expect(kinds(findings)).not.toContain('geographic-miss')
+    expect(vessel.stent!.missedLesion).toBe(true)
+  })
+
+  it('a stent that covers the lesion and its landing zones is not missed', () => {
+    expect(inflate(predilated(), 'des-3.00x18', 5, 23, 13).vessel.stent!.missedLesion).toBe(false)
+  })
+
+  it('a balloon beside the lesion is a miss and prepares nothing', () => {
+    const { vessel, findings } = inflate(fresh(), 'sc-2.50x15', 30, 45, 6)
+    expect(findings).toEqual([{ kind: 'missed-lesion', by: 'balloon' }])
+    expect(vessel.predilated).toBe(false)
+  })
+
+  it('a post-dilation balloon outside the stent is a miss', () => {
+    const stented = inflate(predilated(), 'des-3.00x18', 5, 23, 13).vessel
+    expect(kinds(inflate(stented, 'nc-3.25x12', 33, 45, 16).findings)).toContain('missed-stent')
   })
 
   it('a deflated device (under 2 atm) changes nothing', () => {

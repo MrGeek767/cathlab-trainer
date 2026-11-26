@@ -3,7 +3,7 @@ import type { Device } from '@/data/devices'
 import { diameterAt, pressureFor } from './compliance'
 import type { Note, Grade, ReferenceId } from './grades'
 import { applyInflation, type Finding, type Vessel } from './inflation'
-import { initialLumen, narrowest, referenceAt, type PracticeLesion } from './lesion'
+import { initialLumen, referenceAt, type Lumen, type PracticeLesion } from './lesion'
 import type { Rail } from './rail'
 import { gradePick, type PracticeStep } from './sizing'
 
@@ -60,6 +60,8 @@ export type PracticeAction =
   | { type: 'reset' }
 
 export const MAX_ATM = 30
+/** Non-compliant post-dilation is done at high pressure (design §7.4, §7.5); reviewers to set. */
+export const POSTDILATION_ATM = 16
 export const PRESSURE_TOLERANCE_ATM = 1
 /** Keep this much wire beyond the device tip. */
 export const WIRE_MARGIN_MM = 5
@@ -92,12 +94,38 @@ export function operatorCall(device: Device, step: PracticeStep, ctx: PracticeCo
     return { text: `${verb} to ${mm2(target)} mm.`, targetAtm: pressureFor(device, target) }
   }
   if (device.category === 'stent') return aim(ctx.distalRefMm, 'Deploy')
+  if ((step === 'postdilate' || step === 'final') && device.kind === 'non-compliant') {
+    // The operator calls a pressure: a non-compliant balloon's chart is nearly flat, and high pressure is the point.
+    const atm = Math.min(POSTDILATION_ATM, device.chart.rbpAtm)
+    return { text: `Inflate to high pressure, ${atm} atm.`, targetAtm: atm }
+  }
   if (step === 'postdilate' || step === 'final') return aim(ctx.proximalRefMm, 'Inflate')
   return { text: 'Inflate to nominal pressure.', targetAtm: nominal.atm }
 }
 
 function findingNote(finding: Finding): Omit<Note, 'key'> {
   switch (finding.kind) {
+    case 'missed-lesion':
+      return finding.by === 'stent'
+        ? {
+            grade: 'not-suitable',
+            title: 'Stent missed the lesion',
+            text: 'The stent sits on healthy vessel and the lesion is untreated. Before deploying, line the two markers up across the lesion with 2 mm to spare at each end.',
+            reference: 'stllr-2008',
+          }
+        : {
+            grade: 'not-suitable',
+            title: 'Missed the lesion',
+            text: 'The balloon was inflated beside the lesion, so the narrowing is unchanged. Line its two markers up on either side of the narrowing and inflate again.',
+            reference: null,
+          }
+    case 'missed-stent':
+      return {
+        grade: 'not-suitable',
+        title: 'Missed the stent',
+        text: 'The balloon was inflated outside the stent it was meant to expand. Line its markers up inside the stent and inflate again.',
+        reference: null,
+      }
     case 'geographic-miss':
       return {
         grade: 'not-suitable',
@@ -147,17 +175,32 @@ export function practiceReducer(ctx: PracticeContext) {
         if (device.category === 'stent' && state.vessel.stent) {
           return {
             ...state,
-            notes: addNote(state, {
-              grade: 'not-suitable',
-              title: 'One stent covers this lesion',
-              text: 'A second stent is not needed for a focal lesion. Post-dilate the stent you placed instead.',
-              reference: 'sizing-review',
-            }),
+            notes: addNote(
+              state,
+              state.vessel.stent.missedLesion
+                ? {
+                    // In the lab a miss is covered with another stent; this practice keeps to one.
+                    grade: null,
+                    title: 'One stent in this practice',
+                    text: 'In the lab, a second, overlapping stent would cover the part the first one missed. This practice places one stent. Start again to retry the placement.',
+                    reference: 'stllr-2008',
+                  }
+                : {
+                    grade: 'not-suitable',
+                    title: 'One stent covers this lesion',
+                    text: 'A second stent is not needed for a focal lesion. Post-dilate the stent you placed instead.',
+                    reference: 'sizing-review',
+                  },
+            ),
           }
         }
-        const pickNote = gradePick(state.step, device, sizing(state))
+        let notes = addNote(state, gradePick(state.step, device, sizing(state)))
+        // A stent picked for direct stenting is sized as well.
+        if (device.category === 'stent' && state.step === 'predilate') {
+          notes = [...notes, { ...gradePick('stent', device, sizing(state)), key: `n${notes.length + 1}` }]
+        }
         const step = device.category === 'stent' && state.step === 'predilate' ? 'stent' : state.step
-        return { ...state, step, inHand: device, tipMm: ctx.guideTipMm, call: null, notes: addNote(state, pickNote) }
+        return { ...state, step, inHand: device, tipMm: ctx.guideTipMm, call: null, notes }
       }
 
       case 'move': {
@@ -241,10 +284,12 @@ export function practiceReducer(ctx: PracticeContext) {
         }
         result.findings.forEach(finding => push(findingNote(finding)))
 
+        // A balloon that missed what it was meant for leaves the step open, to try again.
+        const missed = result.findings.some(f => (f.kind === 'missed-lesion' && f.by === 'balloon') || f.kind === 'missed-stent')
         let step = state.step
         if (inHand.category === 'stent') step = 'postdilate'
-        else if (step === 'predilate') step = 'stent'
-        else if (step === 'postdilate') step = 'final'
+        else if (!missed && step === 'predilate') step = 'stent'
+        else if (!missed && step === 'postdilate') step = 'final'
         return { ...base, step, vessel: result.vessel, notes, inHand: inHand.category === 'stent' ? null : inHand }
       }
 
@@ -271,12 +316,22 @@ export function practiceReducer(ctx: PracticeContext) {
       case 'final-shot': {
         const stent = state.vessel.stent
         if (state.inflation || !stent || (state.step !== 'postdilate' && state.step !== 'final')) return state
-        const tightest = narrowest(state.vessel.lumen, stent.startMm, stent.endMm)
-        const residual = 1 - tightest.diameterMm / referenceAt(ctx.segment, ctx.segmentLengthMm, tightest.mm)
+        // The final angiogram is judged where it matters: across the lesion and the stent, so a
+        // stent beside the lesion leaves the narrowing in view.
+        const lesionEnd = ctx.lesion.startMm + ctx.lesion.lengthMm
+        const worst = tightestShare(
+          state.vessel.lumen,
+          Math.min(ctx.lesion.startMm, stent.startMm),
+          Math.max(lesionEnd, stent.endMm),
+          mm => referenceAt(ctx.segment, ctx.segmentLengthMm, mm),
+        )
+        const residual = 1 - worst.share
         const percent = Math.max(0, Math.round(residual * 100))
         const [grade, title]: [Grade, string] =
           residual <= 0.1 ? ['best', 'Good result'] : residual <= 0.2 ? ['acceptable', 'Acceptable result'] : ['not-suitable', 'Residual narrowing']
-        const reference: ReferenceId = 'sizing-review'
+        const inStent = worst.mm >= stent.startMm - 1e-9 && worst.mm <= stent.endMm + 1e-9
+        const advice = residual <= 0.2 ? '' : inStent ? ' Post-dilate with a non-compliant balloon at high pressure.' : ' Part of the lesion was left without a stent.'
+        const reference: ReferenceId = inStent ? 'sizing-review' : 'stllr-2008'
         return {
           ...state,
           step: 'done',
@@ -285,7 +340,7 @@ export function practiceReducer(ctx: PracticeContext) {
           notes: addNote(state, {
             grade,
             title,
-            text: `The final shot shows ${percent}% residual narrowing in the stent.${residual > 0.2 ? ' Post-dilate with a non-compliant balloon at high pressure.' : ''}`,
+            text: `The final shot shows ${percent}% residual narrowing at the lesion.${advice}`,
             reference,
           }),
         }
@@ -295,4 +350,16 @@ export function practiceReducer(ctx: PracticeContext) {
         return initialPractice(ctx)
     }
   }
+}
+
+/** The lowest share of the reference the lumen reaches between `fromMm` and `toMm`, and where. */
+function tightestShare(lumen: Lumen, fromMm: number, toMm: number, reference: (mm: number) => number): { share: number; mm: number } {
+  let worst = { share: Infinity, mm: fromMm }
+  lumen.diameters.forEach((diameter, i) => {
+    const mm = i * lumen.stepMm
+    if (mm < fromMm - 1e-9 || mm > toMm + 1e-9) return
+    const share = diameter / reference(mm)
+    if (share < worst.share) worst = { share, mm }
+  })
+  return worst
 }

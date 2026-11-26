@@ -51,8 +51,9 @@ describe('the practice session', () => {
     expect(s.step).toBe('postdilate')
     expect(s.inHand).toBeNull()
     expect(s.vessel.stent).not.toBeNull()
-    s = inflateAt(s, 'nc-3.25x12', 20, 10)
+    s = inflateAt(s, 'nc-3.25x12', 20, 16)
     expect(s.step).toBe('final')
+    expect(s.notes.some(note => note.title === 'Off the operator’s target')).toBe(false)
     s = step(s, { type: 'final-shot' })
     expect(s.step).toBe('done')
     expect(lastNote(s).grade).toBe('best')
@@ -131,5 +132,66 @@ describe('the practice session', () => {
   it('starts again from the beginning', () => {
     const s = run([pick('sc-2.50x15'), { type: 'reset' }])
     expect(s).toEqual(initialPractice(ctx))
+  })
+})
+
+describe('grading the mistakes Stage 1 teaches', () => {
+  const finalNote = (state: PracticeState) => lastNote(step(state, { type: 'final-shot' }))
+
+  it('grades the final shot at the lesion, so a stent that missed it is not a good result', () => {
+    const s = inflateAt(run([{ type: 'skip' }]), 'des-3.00x18', 48, 13) // stent 30–48 mm, lesion 8–20 mm
+    expect(s.notes.some(note => note.title === 'Stent missed the lesion')).toBe(true)
+    const result = finalNote(s)
+    expect(result.grade).toBe('not-suitable')
+    expect(result.text).toMatch(/7\d% residual narrowing at the lesion/)
+  })
+
+  it('a stent over half the lesion leaves the rest narrowed at the final shot', () => {
+    const s = inflateAt(run([{ type: 'skip' }]), 'des-3.00x18', 32, 13) // stent 14–32 mm
+    expect(finalNote(s).grade).toBe('not-suitable')
+  })
+
+  it('a well-placed stent still earns a good result', () => {
+    const s = inflateAt(inflateAt(initialPractice(ctx), 'sc-2.50x15', 20, 6), 'des-3.00x18', 23, 13)
+    expect(finalNote(s)).toMatchObject({ grade: 'best' })
+    expect(finalNote(s).text).toContain('at the lesion')
+  })
+
+  it('sizes a stent picked for direct stenting, as well as noting the direct stent', () => {
+    const tooLong = run([pick('des-3.00x38')])
+    expect(tooLong.notes.map(note => note.title)).toEqual(['Direct stenting', 'Stent not suitable'])
+    expect(tooLong.notes[1]!.grade).toBe('not-suitable')
+    const tooSmall = run([pick('des-2.50x18')])
+    expect(tooSmall.notes[1]!.grade).toBe('not-suitable')
+  })
+
+  it('a balloon inflated beside the lesion says so, prepares nothing, and lets the learner try again', () => {
+    const s = inflateAt(initialPractice(ctx), 'sc-2.50x15', 45, 6) // balloon 30–45 mm
+    expect(s.notes.some(note => note.title === 'Missed the lesion' && note.grade === 'not-suitable')).toBe(true)
+    expect(s.step).toBe('predilate')
+    expect(s.vessel.predilated).toBe(false)
+  })
+
+  it('a post-dilation balloon outside the stent says so and leaves the step open', () => {
+    let s = inflateAt(inflateAt(initialPractice(ctx), 'sc-2.50x15', 20, 6), 'des-3.00x18', 23, 13) // stent 5–23 mm
+    s = inflateAt(s, 'nc-3.25x12', 45, 16) // balloon 33–45 mm
+    expect(s.notes.some(note => note.title === 'Missed the stent' && note.grade === 'not-suitable')).toBe(true)
+    expect(s.step).toBe('postdilate')
+  })
+
+  it('calls a high pressure for non-compliant post-dilation, as the lab does', () => {
+    let s = inflateAt(inflateAt(initialPractice(ctx), 'sc-2.50x15', 20, 6), 'des-3.00x18', 23, 13)
+    s = step(step(step(s, pick('nc-3.25x12')), current => tipTo(current, 20)), { type: 'inflate' })
+    expect(s.call).toEqual({ text: 'Inflate to high pressure, 16 atm.', targetAtm: 16 })
+  })
+
+  it('after a geographic miss, explains the second stent instead of calling it unnecessary', () => {
+    let s = inflateAt(run([{ type: 'skip' }]), 'des-3.00x18', 32, 13) // stent 14–32 mm
+    expect(s.vessel.stent!.missedLesion).toBe(true)
+    s = step(s, pick('des-3.00x18'))
+    expect(s.inHand).toBeNull()
+    expect(lastNote(s).grade).toBeNull()
+    expect(lastNote(s).text).toMatch(/overlapping stent/)
+    expect(lastNote(s).text).toMatch(/Start again/)
   })
 })
