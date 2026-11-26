@@ -40,7 +40,7 @@ function preparation(balloon: Balloon, ctx: SizingContext): Note {
       ? note(
           'best',
           'Good choice for predilation',
-          'A semi-compliant balloon at about 0.8 to 1 times the vessel size prepares the lesion with little risk of dissection.',
+          'A semi-compliant balloon a little under the vessel’s size opens a simple lesion gently. Many labs now predilate with a non-compliant balloon at 1:1 instead.',
           'cit-2024',
         )
       : note('best', 'Good choice for predilation', 'A non-compliant balloon at about 1:1 prepares the lesion evenly.', 'cit-2024')
@@ -49,7 +49,7 @@ function preparation(balloon: Balloon, ctx: SizingContext): Note {
     'acceptable',
     'Large for a semi-compliant balloon',
     'It is the vessel’s size or a little over; semi-compliant balloons grow with pressure, so keep it near nominal.',
-    'cit-2024',
+    'charts',
   )
 }
 
@@ -115,8 +115,8 @@ export function gradePick(step: PracticeStep, device: Device, ctx: SizingContext
       return note(
         'acceptable',
         'Direct stenting',
-        'Stenting without predilation is accepted for a focal, non-calcified lesion, but the stent may expand less.',
-        'cit-2024',
+        'In selected lesions, stenting without predilation is safe: across 24 trials it caused fewer heart attacks and no more repeat procedures. It suits a focal, non-calcified lesion, though an unprepared lesion can stop the stent expanding fully.',
+        'direct-2010',
       )
     }
     return stentSize(device, ctx)

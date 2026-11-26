@@ -26,6 +26,21 @@ describe('gradePick: sizing the practice devices', () => {
     expect(gradePick(step, deviceById(id)!, ctx(step)).grade).toBe(grade)
   })
 
+  it('cites each predilation and direct-stenting note to a source that says it', () => {
+    const pick = (step: PracticeStep, id: string) => gradePick(step, deviceById(id)!, ctx(step))
+    // CIT 2024 (Leone & Colombo): routine predilation with a non-compliant balloon at 1:1.
+    const semiCompliant = pick('predilate', 'sc-2.50x15')
+    expect(semiCompliant.reference).toBe('cit-2024')
+    expect(semiCompliant.text).toMatch(/non-compliant balloon at 1:1/)
+    expect(pick('predilate', 'nc-3.00x12').reference).toBe('cit-2024')
+    // How much a semi-compliant balloon grows is what its chart shows.
+    expect(pick('predilate', 'sc-3.25x15').reference).toBe('charts')
+    // Direct stenting: the 24-trial meta-analysis (Piscione 2010).
+    const direct = pick('predilate', 'des-3.00x18')
+    expect(direct.reference).toBe('direct-2010')
+    expect(direct.text).toMatch(/24 trials/)
+  })
+
   it('every graded note names its reference and says why', () => {
     for (const step of ['predilate', 'stent', 'postdilate'] as const) {
       for (const device of [...BALLOONS, ...STENTS]) {

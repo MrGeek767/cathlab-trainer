@@ -73,7 +73,7 @@ describe('credits', () => {
   })
 
   it('lists the sources behind the Cath lab grades, as the notes link them', () => {
-    for (const id of ['cit-2024', 'stllr-2008', 'sizing-review'] as const) {
+    for (const id of ['cit-2024', 'stllr-2008', 'sizing-review', 'direct-2010'] as const) {
       const source = PRACTICE_REFERENCES[id]
       expect(REFERENCES, source.label).toContainEqual({ label: source.label, url: source.url })
     }

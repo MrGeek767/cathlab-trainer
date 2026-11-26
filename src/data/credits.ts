@@ -59,6 +59,7 @@ export const REFERENCES: Reference[] = [
   { label: 'Lesion preparation, CIT 2024', url: 'https://citoday.com/articles/2024-may-june/drug-coated-balloons' },
   { label: 'Geographic miss, STLLR trial (Costa 2008)', url: 'https://doi.org/10.1016/j.amjcard.2008.02.053' },
   { label: 'Imaging-guided stent sizing review', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11307675' },
+  { label: 'Direct stenting meta-analysis (Piscione 2010)', url: 'https://doi.org/10.1136/hrt.2009.183277' },
 ]
 
 export const DISCLAIMER = 'Educational simulation, not for clinical use.'
