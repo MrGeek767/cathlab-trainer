@@ -13,8 +13,9 @@ Created by Omar M. Noreldin.
 - **Angle Trainer:** move the C-arm and watch the angiogram, the 3D heart and the view ratings change together, with right-dominant, left-dominant and codominant anatomy.
 - **Contrast runs** with left or right injection.
 - **Challenges:** "Show me" (find the best view for a segment) and "Name the segment", in Learner or Exam mode.
+- **Cath lab practice:** you assist the operator on a proximal LAD lesion. Pick balloons and stents from the shelf, push them along the wire on the monitor, and inflate to the pressure the operator calls, reading the compliance chart. Each choice gets a grade and a short note with its source.
 
-Coming next: the device engine (guide catheters, wires, balloons, stents) and three PCI cases with referenced, tiered scoring.
+Coming next: choosing and seating the guide catheter with its pressure trace, steering the wire, and more PCI cases.
 
 ## Credits
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { CREDITS, REFERENCES, DISCLAIMER, SIMPLIFICATIONS, CREATOR } from './credits'
+import { PRACTICE_REFERENCES } from '@/practice/grades'
 
 describe('credits', () => {
   it('every credit is complete and links over https', () => {
@@ -64,7 +65,19 @@ describe('credits', () => {
   })
 
   it('the simplifications are listed', () => {
-    expect(SIMPLIFICATIONS).toHaveLength(4)
+    expect(SIMPLIFICATIONS).toHaveLength(5)
+  })
+
+  it('says the Cath lab devices and the lesion are simple models', () => {
+    expect(SIMPLIFICATIONS.join(' ')).toMatch(/devices, compliance charts and the lesion's response are simple models/i)
+  })
+
+  it('lists the sources behind the Cath lab grades, as the notes link them', () => {
+    for (const id of ['cit-2024', 'stllr-2008', 'sizing-review'] as const) {
+      const source = PRACTICE_REFERENCES[id]
+      expect(REFERENCES, source.label).toContainEqual({ label: source.label, url: source.url })
+    }
+    expect(REFERENCES.map(reference => reference.url)).toContain('https://doi.org/10.1016/j.amjcard.2008.02.053')
   })
 
   it('the simplifications cover the simulated motion, flow and catheter, so learners know what is modelled', () => {
